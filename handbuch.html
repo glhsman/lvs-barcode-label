@@ -37,7 +37,7 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
-        h1, h2, h3 {
+        h1, h2, h3, h4 {
             font-weight: 700;
             color: #fff;
         }
@@ -53,11 +53,18 @@
         h2 {
             border-left: 4px solid var(--primary);
             padding-left: 15px;
-            margin-top: 40px;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            font-size: 1.6 rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: var(--primary);
         }
 
         .badge-version {
@@ -73,218 +80,367 @@
         .feature-item {
             display: flex;
             align-items: flex-start;
-            margin-bottom: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            transition: transform 0.2s;
+            margin-bottom: 20px;
+            padding: 18px;
+            background: rgba(219, 234, 254, 0.04);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px;
+            transition: all 0.3s;
         }
 
         .feature-item:hover {
-            transform: translateX(5px);
-            background: rgba(255,255,255,0.05);
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.08);
+            border-color: var(--primary);
         }
 
         .feature-icon {
-            font-size: 1.5rem;
-            margin-right: 15px;
-            min-width: 30px;
+            font-size: 1.8rem;
+            margin-right: 18px;
+            min-width: 35px;
             text-align: center;
         }
 
         .step-number {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             background: var(--primary-grad);
             color: white;
-            border-radius: 50%;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            margin-right: 15px;
+            margin-right: 18px;
             flex-shrink: 0;
-            margin-top: 4px;
+            margin-top: 2px;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
         }
 
         .workflow-step {
             display: flex;
-            margin-bottom: 25px;
+            margin-bottom: 35px;
+            position: relative;
+        }
+
+        .workflow-step:not(:last-child):after {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 45px;
+            bottom: -20px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--primary), transparent);
         }
 
         .info-box {
-            background: rgba(59, 130, 246, 0.1);
+            background: rgba(59, 130, 246, 0.08);
             border-left: 4px solid var(--primary);
-            padding: 20px;
-            border-radius: 0 12px 12px 0;
-            margin: 30px 0;
-        }
-
-        .highlight {
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        hr {
-            border-color: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 0 16px 16px 0;
             margin: 40px 0;
+        }
+
+        .warning-box {
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 4px solid #ef4444;
+            padding: 25px;
+            border-radius: 0 16px 16px 0;
+            margin: 40px 0;
+        }
+
+        .code-block {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #60a5fa;
+            margin: 15px 0;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         footer {
             text-align: center;
-            margin-top: 50px;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
             color: var(--text-muted);
+        }
+
+        .index-nav {
+            position: sticky;
+            top: 20px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .nav-item-manual {
+            list-style: none;
+            margin-bottom: 10px;
+        }
+
+        .nav-link-manual {
+            color: var(--text-muted);
+            text-decoration: none;
             font-size: 0.9rem;
+            transition: all 0.2s;
+            display: block;
+            padding: 5px 10px;
+            border-radius: 8px;
         }
 
-        .nav-link {
-            color: var(--text-muted);
-            transition: color 0.2s;
+        .nav-link-manual:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            padding-left: 15px;
         }
 
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        code {
-            background: rgba(0,0,0,0.3);
-            color: #60a5fa;
-            padding: 2px 6px;
+        .keyboard-key {
+            background: #475569;
+            border: 1px solid #64748b;
             border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            color: white;
+            box-shadow: 0 2px 0 #1e293b;
+        }
+
+        .sidebar-manual {
+            display: none;
+        }
+
+        @media (min-width: 1200px) {
+            .sidebar-manual {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-9">
-            <a href="index.php" class="nav-link mb-4 d-inline-block">
-                <i class="bi bi-arrow-left me-2"></i> Zurück zur Applikation
-            </a>
+    <div class="row align-items-start">
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3 sidebar-manual">
+            <div class="index-nav">
+                <h6 class="fw-bold mb-3 text-white px-2">Navigation</h6>
+                <ul class="p-0 m-0">
+                    <li class="nav-item-manual"><a href="#konzept" class="nav-link-manual">Das Konzept</a></li>
+                    <li class="nav-item-manual"><a href="#workflow" class="nav-link-manual">Täglicher Workflow</a></li>
+                    <li class="nav-item-manual"><a href="#designer" class="nav-link-manual">Der Designer</a></li>
+                    <li class="nav-item-manual"><a href="#platzhalter" class="nav-link-manual">Platzhalter & Felder</a></li>
+                    <li class="nav-item-manual"><a href="#drucken" class="nav-link-manual">Formate & Druck</a></li>
+                    <li class="nav-item-manual"><a href="#tipps" class="nav-link-manual">FAQ & Profi-Tipps</a></li>
+                </ul>
+                <hr class="my-3">
+                <a href="index.php" class="btn btn-outline-info btn-sm w-100 rounded-pill mt-2">Zur Applikation</a>
+            </div>
+        </div>
 
-            <div class="glass-card">
+        <!-- Main Content -->
+        <div class="col-xl-9">
+            <div class="glass-card mt-0">
                 <header class="text-center mb-5">
                     <div class="d-flex justify-content-center mb-3">
-                        <div class="bg-primary bg-gradient rounded shadow px-3 py-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <div class="bg-primary bg-gradient rounded shadow px-3 py-3" style="width: 75px; height: 75px; display: flex; align-items: center; justify-content: center;">
                             <i class="bi bi-upc-scan text-white" style="font-size: 2.5rem;"></i>
                         </div>
                     </div>
-                    <div class="badge-version">v2.1.1</div>
-                    <h1>Anwender-Handbuch</h1>
-                    <p class="text-muted fs-5">Weidlich LVS - Barcode & Etiketten-System</p>
+                    <div class="badge-version">Aktuelle Version v2.1.1</div>
+                    <h1>Umfassendes Handbuch</h1>
+                    <p class="text-muted fs-5">LVS Barcode- & Etikettensystem</p>
                 </header>
 
-                <p class="lead text-center mb-5">
-                    Dieses Handbuch erklärt Ihnen die Funktionsweise des Systems und führt Sie durch den täglichen Workflow für schnelles und fehlerfreies Etikettieren.
+                <p class="lead text-center mb-5 mt-4">
+                    Dieses System wurde für den Hochgeschwindigkeits-Druck von Barcode-Etiketten in Lagerumgebungen entwickelt. Es arbeitet <strong>datenschutzkonform</strong> direkt im Browser-Speicher und benötigt keine permanente Datenhaltung für Ihre CSV-Listen.
                 </p>
 
-                <section id="basics">
-                    <h2>Das Konzept: Projekt = Design</h2>
+                <section id="konzept">
+                    <h2>1. Das mentale Modell: Projekt vs. Daten</h2>
                     <p>
-                        Das wichtigste Prinzip der Software: Ein Projekt ist wie ein <strong>fester digitaler Ordner</strong> für einen bestimmten Einsatzzweck.
+                        Um das System effizient zu bedienen, müssen Sie den Unterschied zwischen einem <strong>Projekt</strong> und der <strong>CSV-Datei</strong> verstehen:
                     </p>
-                    <div class="row g-4 mt-2">
-                        <div class="col-md-6">
-                            <div class="card bg-dark bg-opacity-50 border-secondary h-100 p-3">
-                                <h6 class="text-primary fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Was ein Projekt speichert:</h6>
-                                <ul class="small mt-2 ps-3">
-                                    <li><strong>Das Zubehör (Bogen):</strong> Etikettengröße und Spaltenanzahl.</li>
-                                    <li><strong>Das Aussehen:</strong> Positionen von Texten, Barcodes und QR-Codes.</li>
-                                    <li><strong>Die Schnittstelle:</strong> Welche Spaltennamen (Header) Ihre CSV-Datei hat.</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-dark bg-opacity-50 border-secondary h-100 p-3">
-                                <h6 class="text-danger fw-bold"><i class="bi bi-x-circle-fill me-2"></i>Was ein Projekt NICHT ist:</h6>
-                                <p class="small mt-2 mb-0">
-                                    Es ist <strong>kein Datenarchiv</strong>. Die hochgeladenen Artikeldaten werden nicht dauerhaft gespeichert. Sobald Sie den Browser schließen, verfliegen diese Artikeldaten wieder ("Wegwerfware").
-                                </p>
-                            </div>
-                        </div>
+                    
+                    <div class="card bg-dark bg-opacity-40 border-secondary mb-4 p-4 border-0 shadow-sm" style="border-radius: 16px;">
+                        <h5 class="text-primary mb-3">Das Projekt (Beständig)</h5>
+                        <p class="small text-muted">
+                            Ein Projekt ist Ihre <strong>Druck-Schablone</strong>. Es speichert dauerhaft:
+                        </p>
+                        <ul class="mb-0 small">
+                            <li><strong>Physisches Maß:</strong> Breite/Höhe des Aufklebers (z.B. 100x50mm).</li>
+                            <li><strong>Papierart:</strong> A4-Bögen (z.B. 2x4 Etiketten) oder Endlos-Rolle.</li>
+                            <li><strong>Design:</strong> Wo stehen Textfelder, wo sind Barcodes?</li>
+                            <li><strong>Felderkennung:</strong> Welche Namen haben die Spalten Ihrer CSV-Datei (z.B. <code>ArtNr</code>).</li>
+                        </ul>
+                    </div>
+
+                    <div class="card bg-dark bg-opacity-40 border-secondary mb-4 p-4 border-0 shadow-sm" style="border-radius: 16px;">
+                        <h5 class="text-warning mb-3">Die CSV-Daten (Flüchtig)</h5>
+                        <p class="small text-muted">
+                            Die Liste der echten Artikel, die Sie morgens aus dem ERP-System exportieren, ist <strong>flüchtig</strong>:
+                        </p>
+                        <ul class="mb-0 small">
+                            <li>Sie werfen die Liste in das Projekt ("Reload CSV").</li>
+                            <li>Sie drucken Ihre Etiketten.</li>
+                            <li>Sobald Sie den Browser schließen, werden diese Artikeldaten automatisch gelöscht.</li>
+                        </ul>
                     </div>
                 </section>
 
                 <section id="workflow">
-                    <h2>Der tägliche Workflow</h2>
-                    <p class="text-muted mb-4 shadow-sm">Befolgen Sie diese 4 Schritte für den täglichen Etikettendruck:</p>
+                    <h2>2. Der tägliche Workflow</h2>
+                    <p class="text-muted mb-4">Folgen Sie diesen Schritten im Arbeitsalltag:</p>
 
                     <div class="workflow-step">
                         <div class="step-number">1</div>
                         <div>
-                            <h5 class="fw-bold">Projekt wählen</h5>
-                            <p class="text-muted small">Wählen Sie auf der Startseite den gewünschten Zweck aus (z.B. "Standard-Karton-Label").</p>
+                            <h5 class="fw-bold text-white">Projekt wählen</h5>
+                            <p class="small text-muted">Klicken Sie auf der Startseite auf das entsprechende Projekt (z.B. "Logistik-Standard").</p>
                         </div>
                     </div>
 
                     <div class="workflow-step">
                         <div class="step-number">2</div>
                         <div>
-                            <h5 class="fw-bold">Daten einladen (Reload CSV)</h5>
-                            <p class="text-muted small">Klicken Sie oben rechts auf den Button <span class="badge bg-outline-warning border border-warning text-warning">Reload csv</span> und laden Sie Ihre aktuelle Export-Liste aus dem ERP-System hoch.</p>
+                            <h5 class="fw-bold text-white">Frische Daten laden</h5>
+                            <p class="small text-muted">Nutzen Sie oben rechts den Button <span class="badge bg-warning text-dark px-2">Reload csv</span>, um Ihre aktuelle Export-Datei hochzuladen.</p>
                         </div>
                     </div>
 
                     <div class="workflow-step">
                         <div class="step-number">3</div>
                         <div>
-                            <h5 class="fw-bold">Filtern & Auswählen</h5>
-                            <p class="text-muted small">Suchen Sie im Tab "DATEN" nach den gewünschten Artikeln. Markieren Sie die Checkboxen für alle Zeilen, die gedruckt werden sollen.</p>
+                            <h5 class="fw-bold text-white">Suchen & Markieren</h5>
+                            <p class="small text-muted">Nutzen Sie die Suchfelder über der Tabelle im Reiter <strong>"DATEN"</strong>. Setzen Sie die Haken bei allen Zeilen, die auf den Drucker sollen.</p>
                         </div>
                     </div>
 
                     <div class="workflow-step">
                         <div class="step-number">4</div>
                         <div>
-                            <h5 class="fw-bold">Drucken</h5>
-                            <p class="text-muted small">Klicken Sie auf den grünen Drucken-Button. Das System generiert sofort ein PDF mit genau Ihrer Auswahl.</p>
+                            <h5 class="fw-bold text-white">Druckvorschau & PDF</h5>
+                            <p class="small text-muted">Klicken Sie auf <strong>"Drucken"</strong>. Passen Sie ggf. die Startposition an (bei Bögen) und klicken Sie auf "Jetzt Drucken (PDF)".</p>
                         </div>
                     </div>
                 </section>
 
-                <section id="special-cases">
-                    <h2>Besondere Funktionen</h2>
-                    <div class="feature-item">
-                        <div class="feature-icon text-info"><i class="bi bi-receipt"></i></div>
-                        <div>
-                            <h6 class="fw-bold mb-1">Rollendrucker-Modus</h6>
-                            <p class="small text-muted mb-0">Bei Etikettenformaten (z.B. Brother P-Touch), die nur aus einer Spalte/Zeile bestehen, schaltet das System automatisch in den Rollenmodus. Sie müssen hier keine Startposition auf einem Bogen wählen.</p>
-                        </div>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon text-success"><i class="bi bi-magic"></i></div>
-                        <div>
-                            <h6 class="fw-bold mb-1">Automatische Platzhalter</h6>
-                            <p class="small text-muted mb-0">Die Spaltenüberschriften Ihrer CSV werden automatisch als Bausteine wie <code>[~MatNr~]</code> bereitgestellt. Ändert sich der ERP-Export, lernt das System die neuen Spalten beim nächsten "Reload CSV" sofort mit.</p>
-                        </div>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon text-warning"><i class="bi bi-lightning-fill"></i></div>
-                        <div>
-                            <h6 class="fw-bold mb-1">Volltextsuche (High-Speed)</h6>
-                            <p class="small text-muted mb-0">Die Suche in der Datentabelle ist auf Geschwindigkeit optimiert. Filtern Sie sekundenbruchteilschnell auch in Listen mit über 13.000 Einträgen.</p>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="info-box">
-                    <h6 class="fw-bold"><i class="bi bi-lightbulb-fill me-2 text-warning"></i>Profi-Tipp</h6>
-                    <p class="small mb-0">
-                        Wenn Ihre CSV-Datei morgen denselben Aufbau hat wie heute, müssen Sie <strong>kein neues Projekt</strong> anlegen. Nutzen Sie einfach den „Reload CSV“-Button im bestehenden Projekt. Ihr mühsam erstelltes Design bleibt erhalten und wird sofort auf die neuen Daten angewendet.
+                <section id="designer">
+                    <h2>3. Der Visuelle Designer</h2>
+                    <p>
+                        Im Reiter <strong>"DESIGNER"</strong> gestalten Sie das Aussehen Ihres Etiketts.
                     </p>
-                </div>
+                    
+                    <h3>Objekte hinzufügen & bearbeiten</h3>
+                    <ul>
+                        <li>Klicken Sie auf <strong>"+ Text"</strong> oder <strong>"+ Barcode"</strong>, um ein neues Element auf dem Etikett zu platzieren.</li>
+                        <li><strong>Drag & Drop:</strong> Ziehen Sie das Objekt mit der Maus an die gewünschte Position.</li>
+                        <li><strong>Bearbeiten:</strong> Mit einem <strong>Doppelklick</strong> auf das Objekt (oder Klick auf das ✏️-Icon) öffnen sich die Eigenschaften.</li>
+                    </ul>
 
-                <hr>
+                    <h3>Barcode-Typen</h3>
+                    <p class="small text-muted">Sie können zwischen drei Haupttypen wählen:</p>
+                    <div class="row g-2 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-2 border border-secondary rounded text-center small"><strong>Code 128</strong><br>Standard-Code für Texte/Zahlen.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border border-secondary rounded text-center small"><strong>EAN 13</strong><br>Für klassische europäische Artikelnummern.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 border border-secondary rounded text-center small"><strong>QR-Code</strong><br>Für große Datenmengen oder Weblinks.</div>
+                        </div>
+                    </div>
 
-                <footer class="pb-2">
-                    <p>© 2026 Weidlich LVS - Barcode & Etiketten-System. Alle Rechte vorbehalten.</p>
+                    <div class="info-box">
+                        <h6 class="fw-bold"><i class="bi bi-aspect-ratio me-2 text-info"></i>Profi-Tipp: QR-Code Format</h6>
+                        <p class="small mb-0">Das System achtet beim QR-Code automatisch auf ein quadratisches Format (1:1). Ändern Sie die Breite, zieht die Höhe im Designer automatisch mit, um Fehl-Scans zu vermeiden.</p>
+                    </div>
+                </section>
+
+                <section id="platzhalter">
+                    <h2>4. Variablen & Platzhalter</h2>
+                    <p>
+                        Damit das System weiß, welche Daten aus der CSV an welche Stelle auf dem Etikett sollen, nutzen wir Platzhalter.
+                    </p>
+                    <p>Ein Platzhalter wird immer in <code>[~ ~]</code> eingeschlossen, zum Beispiel:</p>
+                    <div class="code-block text-center">
+                        [~Materialnummer~]
+                    </div>
+                    <p class="small text-muted">
+                        Sie müssen diese nicht auswendig lernen! In den Eigenschaften eines Objekts (Doppelklick) finden Sie eine Liste aller verfügbaren Felder. Ein Klick darauf fügt den Platzhalter automatisch in den Text ein.
+                    </p>
+                </section>
+
+                <section id="drucken">
+                    <h2>5. Etiketten-Formate & Druckeinstellungen</h2>
+                    <p>In der linken Seitenleiste stellen Sie das physische Papierformat ein:</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Bogen-Layouts (z.B. Zweckform)</h6>
+                            <p class="small text-muted">Geben Sie die Anzahl der Spalten und Zeilen pro Blatt an. Die Druckvorschau lässt Sie dann wählen, an welcher Stelle auf dem Blatt der Druck beginnen soll.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Rollen-Layouts (z.B. Brother)</h6>
+                            <p class="small text-muted">Stellen Sie <strong>Spalten: 1</strong> und <strong>Zeilen: 1</strong> ein. Das System erkennt automatisch, dass es sich um eine Endlosrolle handelt und optimiert die Ansicht.</p>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h6 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Drucker-Einstellungen am PC</h6>
+                        <p class="small mb-0">Im Windows-Druckdialog des Browsers (Chrome/Edge) stellen Sie bitte <strong>"Ränder: Keine"</strong> ein und achten Sie darauf, dass die <strong>Skalierung auf "100%"</strong> (nicht "Anpassen") steht, damit die mm-Angaben exakt stimmen.</p>
+                    </div>
+                </section>
+
+                <section id="tipps">
+                    <h2>6. FAQ & Tipps</h2>
+
+                    <div class="accordion accordion-flush" id="faqAccordion">
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f1">
+                                    Wie schnell kann ich suchen?
+                                </button>
+                            </h2>
+                            <div id="f1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Dank der High-Performance Filterung können Sie in Echtzeit in über 13.000 Zeilen suchen. Geben Sie einfach einen Teilbegriff in das Suchfeld über der jeweiligen Spalte ein.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f2">
+                                    Kann ich Excel-Dateien nutzen?
+                                </button>
+                            </h2>
+                            <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Speichern Sie Ihre Excel-Datei einfach als <strong>CSV (Trennzeichen-getrennt)</strong> ab. Das System unterstützt sowohl Komma als auch Semikolon als Trenner und erkennt diese automatisch.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f3">
+                                    Warum sind meine Daten weg?
+                                </button>
+                            </h2>
+                            <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Das System speichert Ihre Export-Listen nur temporär in der Session. Dies dient der Sicherheit und der Performance. Das <strong>Design</strong> des Etiketts bleibt jedoch im Hintergrund dauerhaft in der Datenbank gespeichert und ist morgen sofort wieder bereit.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <footer>
+                    <p>© 2026 Weidlich LVS - Barcode & Etiketten-System. IT-Support kontaktieren bei Fragen zur Einrichtung.</p>
+                    <div class="mt-2" style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.1.1</div>
                 </footer>
-            </div>
-            
-            <div class="text-center mt-4">
-                <a href="index.php" class="btn btn-outline-light btn-sm px-4">Zurück zur Startseite</a>
             </div>
         </div>
     </div>
