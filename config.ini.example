@@ -1,0 +1,6 @@
+[database]
+host = "localhost"
+database = "barcode_db"
+user = "root"
+password = ""
+port = 3306
