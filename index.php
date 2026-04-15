@@ -41,6 +41,9 @@ $projects = $stmt->fetchAll();
             </div>
             <span>BARCODE SYSTEM</span>
         </a>
+        <div class="ms-auto">
+            <a href="handbuch.html" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info"><i class="bi bi-question-circle me-1"></i> Hilfe / Handbuch</a>
+        </div>
     </div>
 </nav>
 

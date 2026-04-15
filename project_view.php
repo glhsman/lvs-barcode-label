@@ -88,6 +88,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 </div>
                 <span>BARCODE SYSTEM</span>
             </a>
+            <a href="handbuch.html" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-3 d-none d-lg-inline-block"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
         </div>
         <div class="ms-auto d-flex align-items-center">
             <div class="text-end me-4 d-none d-md-block">
