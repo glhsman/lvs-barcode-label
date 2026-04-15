@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once 'config.php';
 $projectId = $_GET['id'] ?? null;
 if (!$projectId) { header("Location: index.php"); exit; }
@@ -21,11 +22,27 @@ $fields->execute([$projectId]);
 $fields = $fields->fetchAll();
 
 $records = [];
-$stmt = $pdo->prepare("SELECT dr.id as record_id, dr.selected, pf.id as field_id, rv.value FROM data_records dr JOIN project_fields pf ON pf.project_id = dr.project_id LEFT JOIN record_values rv ON rv.record_id = dr.id AND rv.field_id = pf.id WHERE dr.project_id = ? ORDER BY dr.position ASC, pf.position ASC");
-$stmt->execute([$projectId]);
-foreach ($stmt->fetchAll() as $row) {
-    if (!isset($records[$row['record_id']])) $records[$row['record_id']] = ['selected' => $row['selected'], 'values' => []];
-    $records[$row['record_id']]['values'][$row['field_id']] = $row['value'];
+$records = [];
+if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
+    $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
+    $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+    if ($encoding !== 'UTF-8') $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
+    $lines = explode("\n", str_replace("\r", "", $csvData));
+    $headerLine = array_shift($lines);
+    $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
+    
+    foreach ($lines as $idx => $line) {
+        $line = trim($line);
+        if (!$line) continue;
+        $row = str_getcsv($line, $delimiter);
+        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? true;
+        
+        $values = [];
+        foreach ($fields as $colIdx => $field) {
+             $values[$field['id']] = $row[$colIdx] ?? '';
+        }
+        $records[$idx] = ['selected' => $selected, 'values' => $values];
+    }
 }
 $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC")->fetchAll();
 ?>
@@ -65,7 +82,9 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
         <div class="d-flex align-items-center">
             <a href="index.php" class="btn btn-outline-light btn-sm me-3 border-secondary"><i class="bi bi-arrow-left me-1"></i> Projektwahl</a>
             <a class="navbar-brand fw-bold d-flex align-items-center m-0" href="index.php">
-                <img src="Image.jpg" alt="Logo" width="32" height="32" class="me-2 rounded shadow-sm">
+                <div class="d-flex align-items-center justify-content-center bg-primary bg-gradient rounded shadow-sm me-2" style="width: 32px; height: 32px;">
+                    <i class="bi bi-upc-scan text-white" style="font-size: 1.1rem;"></i>
+                </div>
                 <span>BARCODE SYSTEM</span>
             </a>
         </div>
@@ -74,7 +93,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 <div class="small text-muted fw-bold" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Aktiv</div>
                 <div class="text-primary fw-bold" style="font-size: 0.9rem;"><?= htmlspecialchars($project['name']) ?></div>
             </div>
-            <a href="print_labels.php?id=<?= $projectId ?>" class="btn btn-success btn-sm px-4 shadow-sm fw-bold"><i class="bi bi-printer me-2"></i>Drucken</a>
+            <button onclick="saveDesignerAndPrint()" class="btn btn-success btn-sm px-4 shadow-sm fw-bold"><i class="bi bi-printer me-2"></i>Drucken</button>
         </div>
     </div>
 </nav>
@@ -86,48 +105,65 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             <div class="glass-card p-4 mb-4">
                 <div class="fw-bold mb-3 small" style="letter-spacing: 1px; color: #3b82f6;">FORMAT & VORLAGEN</div>
                 <label class="form-label-sm">Vorlage laden</label>
-                <select class="form-select form-select-sm bg-dark text-light border-secondary mb-3" onchange="applyTemplate(this)">
+                <select id="templateSelect" class="form-select form-select-sm bg-dark text-light border-secondary mb-3" onchange="applyTemplate(this)">
                     <option value="">-- Vorlage wählen --</option>
-                    <?php foreach($globalTemplates as $t): ?><option value='<?= json_encode($t)?>'><?= htmlspecialchars($t['name'])?></option><?php endforeach; ?>
+                    <?php foreach($globalTemplates as $t): ?>
+                        <option value='<?= json_encode($t)?>' <?= ($format['template_id'] == $t['id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($t['name'])?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
                 <hr class="border-secondary opacity-25">
-                <form id="formatForm">
+                <form id="formatForm" autocomplete="off">
                     <input type="hidden" name="project_id" value="<?= $projectId ?>">
+                    <input type="hidden" name="template_id_<?= $projectId ?>" value="<?= $format['template_id'] ?>">
                     <div class="row g-2 mb-2">
-                        <div class="col-6"><label class="form-label-sm">Breite</label><input type="number" step="0.1" name="width_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= $format['width_mm'] ?>"></div>
-                        <div class="col-6"><label class="form-label-sm">Höhe</label><input type="number" step="0.1" name="height_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= $format['height_mm'] ?>"></div>
+                        <div class="col-6"><label class="form-label-sm">Breite</label><input type="number" step="0.1" name="width_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (float)$format['width_mm'] ?>"></div>
+                        <div class="col-6"><label class="form-label-sm">Höhe</label><input type="number" step="0.1" name="height_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (float)$format['height_mm'] ?>"></div>
                     </div>
                     <div class="row g-2 mb-2">
-                        <div class="col-6"><label class="form-label-sm">Spalten</label><input type="number" name="cols" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= $format['cols'] ?>"></div>
-                        <div class="col-6"><label class="form-label-sm">Zeilen</label><input type="number" name="rows" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= $format['rows'] ?>"></div>
+                        <div class="col-6"><label class="form-label-sm">Spalten</label><input type="number" name="cols_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (int)$format['cols'] ?>"></div>
+                        <div class="col-6"><label class="form-label-sm">Zeilen</label><input type="number" name="rows_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (int)$format['rows'] ?>"></div>
                     </div>
                     <div class="row g-2 mb-2">
-                        <div class="col-6"><label class="form-label-sm">H-Abst.</label><input type="number" step="0.1" name="col_gap_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= $format['col_gap_mm'] ?>"></div>
-                        <div class="col-6"><label class="form-label-sm">V-Abst.</label><input type="number" step="0.1" name="row_gap_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= $format['row_gap_mm'] ?>"></div>
+                        <div class="col-6"><label class="form-label-sm">H-Abst.</label><input type="number" step="0.1" name="col_gap_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (float)$format['col_gap_mm'] ?>"></div>
+                        <div class="col-6"><label class="form-label-sm">V-Abst.</label><input type="number" step="0.1" name="row_gap_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (float)$format['row_gap_mm'] ?>"></div>
                     </div>
                     <div class="form-label-sm mt-3 mb-1">Ränder (Ob / Un / Li / Re)</div>
                     <div class="row g-1 mb-4">
-                        <div class="col-3"><input type="number" step="0.1" name="margin_top_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= $format['margin_top_mm'] ?>"></div>
-                        <div class="col-3"><input type="number" step="0.1" name="margin_bottom_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= $format['margin_bottom_mm'] ?>"></div>
-                        <div class="col-3"><input type="number" step="0.1" name="margin_left_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= $format['margin_left_mm'] ?>"></div>
-                        <div class="col-3"><input type="number" step="0.1" name="margin_right_mm" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= $format['margin_right_mm'] ?>"></div>
+                        <div class="col-3"><input type="number" step="0.1" name="margin_top_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_top_mm'] ?>"></div>
+                        <div class="col-3"><input type="number" step="0.1" name="margin_bottom_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_bottom_mm'] ?>"></div>
+                        <div class="col-3"><input type="number" step="0.1" name="margin_left_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_left_mm'] ?>"></div>
+                        <div class="col-3"><input type="number" step="0.1" name="margin_right_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_right_mm'] ?>"></div>
                     </div>
                 </form>
-                <button class="btn btn-primary btn-sm w-100" onclick="saveFormat()"><i class="bi bi-save me-1"></i> Format speichern</button>
+                <button class="btn btn-primary btn-sm w-100" onclick="saveFormat()"><i class="bi bi-check-circle me-1"></i> Template zuweisen</button>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="col-md-9">
             <!-- Navigation -->
-            <ul class="nav nav-pills mb-3 glass-card p-1" style="width:fit-content;" id="pills-tab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="pills-data-tab" data-bs-toggle="pill" data-bs-target="#pills-data" type="button" role="tab"><i class="bi bi-grid-3x3-gap me-2"></i>DATEN</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="pills-designer-tab" data-bs-toggle="pill" data-bs-target="#pills-designer" type="button" role="tab"><i class="bi bi-palette-fill me-2"></i>DESIGNER</button>
-                </li>
-            </ul>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <ul class="nav nav-pills glass-card p-1 m-0" style="width:fit-content;" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pills-data-tab" data-bs-toggle="pill" data-bs-target="#pills-data" type="button" role="tab">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>DATEN 
+                            <span class="badge bg-light text-dark ms-2 rounded-pill"><?= count($records) ?> <small class="text-muted" style="font-size: 0.6rem;">Zeilen</small></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pills-designer-tab" data-bs-toggle="pill" data-bs-target="#pills-designer" type="button" role="tab"><i class="bi bi-palette-fill me-2"></i>DESIGNER</button>
+                    </li>
+                </ul>
+                <button class="btn btn-outline-warning text-danger" style="border-color: #a3e635; color: #ef4444 !important; background: transparent; padding: 6px 20px;" onclick="document.getElementById('csvUploadInput').click()">
+                    Reload csv
+                </button>
+                <form id="csvReloadForm" style="display:none;" action="reload_csv.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="project_id" value="<?= $projectId ?>">
+                    <input type="file" id="csvUploadInput" name="csv_file" accept=".csv" onchange="document.getElementById('csvReloadForm').submit()">
+                </form>
+            </div>
 
             <!-- Tab Content -->
             <div class="tab-content" id="pills-tabContent">
@@ -137,14 +173,20 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                             <table class="table table-dark table-hover table-sm mb-0">
                                 <thead class="sticky-top-table">
                                     <tr>
-                                        <th width="40" class="ps-3 text-center"><i class="bi bi-check2-square"></i></th>
+                                        <th width="40" class="ps-3 text-center"><input type="checkbox" class="form-check-input" id="checkAllRecords" onchange="toggleAllRecords(this.checked)" title="Alle an/abwählen"></th>
                                         <?php foreach($fields as $f): ?><th><?= htmlspecialchars($f['name']) ?></th><?php endforeach; ?>
                                     </tr>
+                                    <tr>
+                                        <th></th>
+                                        <?php foreach($fields as $idx => $f): ?>
+                                            <th><input type="text" class="form-control form-control-sm bg-dark text-light border-secondary column-filter" data-col="<?= $idx + 1 ?>" placeholder="Filter..." onkeyup="filterTable()"></th>
+                                        <?php endforeach; ?>
+                                    </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="data-table-body">
                                     <?php foreach($records as $rid => $rec): ?>
                                     <tr>
-                                        <td class="ps-3 text-center"><input type="checkbox" class="form-check-input" <?= $rec['selected']?'checked':'' ?>></td>
+                                        <td class="ps-3 text-center"><input type="checkbox" class="form-check-input record-select-checkbox" data-id="<?= $rid ?>" onchange="updateSelection(<?= $rid ?>, this.checked)" <?= $rec['selected']?'checked':'' ?>></td>
                                         <?php foreach($fields as $f): ?><td><?= htmlspecialchars($rec['values'][$f['id']]??'') ?></td><?php endforeach; ?>
                                     </tr>
                                     <?php endforeach; ?>
@@ -167,8 +209,16 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="saveDesigner()"><i class="bi bi-cloud-check me-1"></i> Design speichern</button>
                             </div>
                         </div>
-                        <div class="card-body p-5 bg-slate-900 border-0 text-center position-relative" style="min-height: 500px;">
-                            <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
+                        <div class="card-body p-5 bg-slate-900 border-0 text-center position-relative d-flex justify-content-center align-items-center" style="min-height: 600px; overflow: auto;">
+                            <div id="zoom-container" style="transform-origin: center center; padding: 50px;">
+                                <div style="position: relative;">
+                                <!-- Lineale -->
+                                <div id="ruler-x" style="position:absolute; top:-20px; left:0; width:<?= $format['width_mm']*3.78?>px; height:20px; border-bottom:1px solid #475569; font-size:9px; color:#94a3b8; font-family:monospace; text-align:left;"></div>
+                                <div id="ruler-y" style="position:absolute; left:-30px; top:0; height:<?= $format['height_mm']*3.78?>px; width:30px; border-right:1px solid #475569; font-size:9px; color:#94a3b8; font-family:monospace;"></div>
+                                
+                                <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
+                                </div>
+                            </div>
                             <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-V2.0.1-STABLE</div>
                         </div>
                     </div>
@@ -200,6 +250,10 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 <div id="fontSizeGroup" class="col-6"><label class="form-label-sm">Schriftgröße (pt)</label><input type="number" class="form-control bg-dark text-light border-secondary" id="objFontSize"></div>
                 <div id="barcodeTypeGroup" class="col-6"><label class="form-label-sm">Barcode Typ</label><select class="form-select bg-dark text-light border-secondary" id="objBarcodeType"><option value="code128">Code 128</option><option value="ean13">EAN 13</option><option value="qr">QR Code</option></select></div>
             </div>
+            <div class="row g-2 mt-2">
+                <div class="col-6"><label class="form-label-sm">Breite der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objWidth"></div>
+                <div class="col-6"><label class="form-label-sm">Höhe der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objHeight"></div>
+            </div>
         </div>
         <div class="modal-footer border-top-0 pt-0">
             <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
@@ -210,6 +264,75 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
 
 <script src="https://cdn.jsdelivr.net/npm/bwip-js/dist/bwip-js-min.js"></script>
 <script>
+// Lineale (Rulers) rendern
+const pxPerMm = 3.78;
+const formatW = <?= (float)$format['width_mm'] ?>;
+const formatH = <?= (float)$format['height_mm'] ?>;
+
+function updateDesignerZoom() {
+    const pId = <?= $projectId ?>;
+    const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value) || 10;
+    const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value) || 10;
+    const canv = document.getElementById('designer-canvas');
+    const rx = document.getElementById('ruler-x');
+    const ry = document.getElementById('ruler-y');
+    
+    // Canvas Größe live anpassen
+    canv.style.width = (fw * pxPerMm) + 'px';
+    canv.style.height = (fh * pxPerMm) + 'px';
+    rx.style.width = (fw * pxPerMm) + 'px';
+    ry.style.height = (fh * pxPerMm) + 'px';
+
+    // Rulers neu zeichnen
+    renderRulers(fw, fh);
+
+    // Zoom-Berechnung
+    const targetAreaW = 850; 
+    const targetAreaH = 450;
+    let scaleW = targetAreaW / (fw * pxPerMm);
+    let scaleH = targetAreaH / (fh * pxPerMm);
+    let newZoom = Math.min(scaleW, scaleH);
+    if (newZoom > 5.0) newZoom = 5.0;
+    if (newZoom < 0.2) newZoom = 0.2;
+    
+    window.zoomLevel = newZoom; // Global verfügbar machen für Drag&Drop
+    document.getElementById('zoom-container').style.transform = `scale(${newZoom})`;
+}
+
+function renderRulers(fw, fh) {
+    const rx = document.getElementById('ruler-x');
+    const ry = document.getElementById('ruler-y');
+    rx.innerHTML = '';
+    ry.innerHTML = '';
+    
+    for(let i=0; i<=fw; i+=10) {
+        rx.innerHTML += `<div style="position:absolute; left:${i*pxPerMm}px; bottom:2px; transform:translateX(2px);">${i}</div>
+                         <div style="position:absolute; left:${i*pxPerMm}px; bottom:0; height:12px; border-left:1px solid #475569;"></div>`;
+    }
+    for(let i=5; i<=fw; i+=10) rx.innerHTML += `<div style="position:absolute; left:${i*pxPerMm}px; bottom:0; height:5px; border-left:1px solid #475569;"></div>`;
+    
+    for(let i=0; i<=fh; i+=10) {
+        ry.innerHTML += `<div style="position:absolute; top:${i*pxPerMm}px; right:12px; transform:translateY(-50%);">${i}</div>
+                         <div style="position:absolute; top:${i*pxPerMm}px; right:0; width:10px; border-top:1px solid #475569;"></div>`;
+    }
+    for(let i=5; i<=fh; i+=10) ry.innerHTML += `<div style="position:absolute; top:${i*pxPerMm}px; right:0; width:5px; border-top:1px solid #475569;"></div>`;
+}
+
+// Initialer Aufruf zur Korrektur von Browser-Cache-Fehlern
+window.addEventListener('DOMContentLoaded', () => {
+    // Sicherstellen, dass die PHP-Werte wirklich in den Feldern stehen (gegen Browser-Persistence)
+    const pId = <?= $projectId ?>;
+    const f = document.getElementById('formatForm');
+    f.querySelector(`[name="width_mm_${pId}"]`).value = "<?= (float)$format['width_mm'] ?>";
+    f.querySelector(`[name="height_mm_${pId}"]`).value = "<?= (float)$format['height_mm'] ?>";
+    f.querySelector(`[name="cols_${pId}"]`).value = "<?= (int)$format['cols'] ?>";
+    f.querySelector(`[name="rows_${pId}"]`).value = "<?= (int)$format['rows'] ?>";
+    f.querySelector(`[name="col_gap_mm_${pId}"]`).value = "<?= (float)$format['col_gap_mm'] ?>";
+    f.querySelector(`[name="row_gap_mm_${pId}"]`).value = "<?= (float)$format['row_gap_mm'] ?>";
+
+    updateDesignerZoom();
+});
+
 let labelObjects = <?= json_encode($labelObjects) ?>;
 labelObjects = labelObjects.map(o => { if(typeof o.properties==='string') try { o.properties=JSON.parse(o.properties); } catch(e){ o.properties={}; } return o; });
 const PX_PER_MM = 3.78;
@@ -233,6 +356,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function insertPlaceholder(n) { const t = document.getElementById('objContent'); const s = t.selectionStart; t.value = t.value.substring(0, s) + `[~${n}~]` + t.value.substring(t.selectionEnd); t.focus(); }
 
+function updateSelection(recordId, isSelected) {
+    const fd = new FormData();
+    fd.append('record_id', recordId);
+    fd.append('project_id', <?= $projectId ?>);
+    fd.append('selected', isSelected ? 1 : 0);
+    fetch('api_update_selection.php', { method: 'POST', body: fd });
+}
+
+function filterTable() {
+    const filters = Array.from(document.querySelectorAll('.column-filter')).map(input => ({
+        col: parseInt(input.getAttribute('data-col')),
+        val: input.value.toLowerCase()
+    }));
+    const rows = document.getElementById('data-table-body').getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        let showRow = true;
+        for (const filter of filters) {
+            if (filter.val) {
+                const cellText = cells[filter.col].innerText.toLowerCase();
+                if (!cellText.includes(filter.val)) {
+                    showRow = false;
+                    break;
+                }
+            }
+        }
+        rows[i].style.display = showRow ? '' : 'none';
+    }
+}
+
 function renderObjects() {
     const canv = document.getElementById('designer-canvas');
     if(!canv) return;
@@ -249,7 +402,28 @@ function renderObjects() {
         const inner = document.createElement('div');
         inner.style.pointerEvents = 'none'; inner.style.width='100%'; inner.style.height='100%'; inner.style.display='flex'; inner.style.alignItems='center'; inner.style.justifyContent='center';
         if(obj.type==='text') { inner.innerText = obj.properties.content||'Text'; inner.style.fontSize = (obj.properties.font_size||10)+'pt'; }
-        else { const c = document.createElement('canvas'); try { bwipjs.toCanvas(c, {bcid:obj.properties.barcode_type||'code128', text:obj.properties.content||'123', scale:2, height:10, includetext:true}); } catch(e){} inner.appendChild(c); }
+        else { 
+            const c = document.createElement('canvas'); 
+            try { 
+                let bType = obj.properties.barcode_type||'code128';
+                let isQR = bType === 'qr';
+                if(isQR) bType = 'qrcode';
+                
+                const opts = {
+                    bcid: bType, 
+                    text: obj.properties.content||'123', 
+                    scale: 2,
+                    includetext: !isQR
+                };
+                if(!isQR) opts.height = 10;
+                
+                bwipjs.toCanvas(c, opts); 
+                c.style.width = '100%';
+                c.style.height = '100%';
+                c.style.objectFit = 'contain';
+            } catch(e){} 
+            inner.appendChild(c); 
+        }
         div.appendChild(inner);
         div.onmousedown = (e) => {
             if(e.target.classList.contains('obj-btn')) return;
@@ -257,7 +431,12 @@ function renderObjects() {
             document.querySelectorAll('.designer-object').forEach(el => el.classList.remove('selected'));
             div.classList.add('selected');
             const sX=e.clientX, sY=e.clientY, iX=obj.x_mm*PX_PER_MM, iY=obj.y_mm*PX_PER_MM;
-            const move = (ev) => { obj.x_mm = (iX+ev.clientX-sX)/PX_PER_MM; obj.y_mm = (iY+ev.clientY-sY)/PX_PER_MM; div.style.left=obj.x_mm*PX_PER_MM+'px'; div.style.top=obj.y_mm*PX_PER_MM+'px'; };
+            const move = (ev) => { 
+                obj.x_mm = (iX+(ev.clientX-sX)/zoomLevel)/PX_PER_MM; 
+                obj.y_mm = (iY+(ev.clientY-sY)/zoomLevel)/PX_PER_MM; 
+                div.style.left=obj.x_mm*PX_PER_MM+'px'; 
+                div.style.top=obj.y_mm*PX_PER_MM+'px'; 
+            };
             const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
             document.addEventListener('mousemove', move);
             document.addEventListener('mouseup', up);
@@ -273,6 +452,8 @@ function editObject(idx) {
     document.getElementById('objContent').value = o.properties.content;
     document.getElementById('fontSizeGroup').style.display = o.type==='text'?'block':'none';
     document.getElementById('barcodeTypeGroup').style.display = o.type==='barcode'?'block':'none';
+    document.getElementById('objWidth').value = o.width_mm;
+    document.getElementById('objHeight').value = o.height_mm;
     if(o.type==='text') document.getElementById('objFontSize').value = o.properties.font_size||10;
     else document.getElementById('objBarcodeType').value = o.properties.barcode_type||'code128';
     new bootstrap.Modal(document.getElementById('objectModal')).show();
@@ -280,26 +461,74 @@ function editObject(idx) {
 function applyObjectProperties() {
     const o = labelObjects[selectedIdx];
     o.properties.content = document.getElementById('objContent').value;
+    o.width_mm = parseFloat(document.getElementById('objWidth').value) || o.width_mm;
+    o.height_mm = parseFloat(document.getElementById('objHeight').value) || o.height_mm;
     if(o.type==='text') o.properties.font_size = document.getElementById('objFontSize').value;
     else o.properties.barcode_type = document.getElementById('objBarcodeType').value;
-    renderObjects();
     bootstrap.Modal.getInstance(document.getElementById('objectModal')).hide();
+    renderObjects();
 }
 function saveDesigner(silent = false) {
     const fd = new FormData(); fd.append('project_id', <?= $projectId ?>); fd.append('objects', JSON.stringify(labelObjects));
     return fetch('api_save_objects.php', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.success && !silent) alert('Design erfolgreich gespeichert!'); });
 }
+function saveDesignerAndPrint() {
+    saveDesigner(true).then(() => { window.location.href = 'print_labels.php?id=<?= $projectId ?>'; });
+}
+
+function toggleAllRecords(checked) {
+    const checkboxes = document.querySelectorAll('.record-select-checkbox');
+    checkboxes.forEach(cb => cb.checked = checked);
+    
+    const fd = new FormData();
+    fd.append('action_all', '1');
+    fd.append('project_id', <?= $projectId ?>);
+    fd.append('selected', checked ? 1 : 0);
+    fetch('api_update_selection.php', { method: 'POST', body: fd });
+}
+
 function saveFormat() { fetch('api_update_format.php', {method:'POST', body:new FormData(document.getElementById('formatForm'))}).then(()=>location.reload()); }
 function openPreview() { saveDesigner(true).then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1`, '_blank')); }
 function applyTemplate(s) { 
     if(!s.value) return; const t=JSON.parse(s.value); const f=document.getElementById('formatForm');
-    f.querySelector('[name="width_mm"]').value=t.width_mm; f.querySelector('[name="height_mm"]').value=t.height_mm;
-    f.querySelector('[name="cols"]').value=t.cols; f.querySelector('[name="rows"]').value=t.rows;
-    f.querySelector('[name="col_gap_mm"]').value=t.col_gap_mm; f.querySelector('[name="row_gap_mm"]').value=t.row_gap_mm;
-    f.querySelector('[name="margin_top_mm"]').value=t.margin_top_mm; f.querySelector('[name="margin_bottom_mm"]').value=t.margin_bottom_mm;
-    f.querySelector('[name="margin_left_mm"]').value=t.margin_left_mm; f.querySelector('[name="margin_right_mm"]').value=t.margin_right_mm;
-    saveFormat();
+    const pId = <?= $projectId ?>;
+    
+    // Template ID setzen
+    f.querySelector(`[name="template_id_${pId}"]`).value = t.id;
+    f.querySelector(`[name="width_mm_${pId}"]`).value=t.width_mm; 
+    f.querySelector(`[name="height_mm_${pId}"]`).value=t.height_mm;
+    f.querySelector(`[name="cols_${pId}"]`).value=t.cols; 
+    f.querySelector(`[name="rows_${pId}"]`).value=t.rows;
+    f.querySelector(`[name="col_gap_mm_${pId}"]`).value=t.col_gap_mm || 0; 
+    f.querySelector(`[name="row_gap_mm_${pId}"]`).value=t.row_gap_mm || 0;
+    f.querySelector(`[name="margin_top_mm_${pId}"]`).value=t.margin_top_mm || 0; 
+    f.querySelector(`[name="margin_bottom_mm_${pId}"]`).value=t.margin_bottom_mm || 0;
+    f.querySelector(`[name="margin_left_mm_${pId}"]`).value=t.margin_left_mm || 0; 
+    f.querySelector(`[name="margin_right_mm_${pId}"]`).value=t.margin_right_mm || 0;
+    
+    updateDesignerZoom();
+    fetch('api_update_format.php', {method:'POST', body:new FormData(f)});
 }
+
+// Live-Update bei Tippen
+document.querySelectorAll('#formatForm input').forEach(inp => {
+    inp.addEventListener('input', updateDesignerZoom);
+});
+
+// QR Code 1:1 Ratio Sync
+document.getElementById('objBarcodeType').addEventListener('change', function() {
+    if (this.value === 'qr') document.getElementById('objHeight').value = document.getElementById('objWidth').value;
+});
+document.getElementById('objWidth').addEventListener('input', function() {
+    if (labelObjects[selectedIdx] && labelObjects[selectedIdx].type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
+        document.getElementById('objHeight').value = this.value;
+    }
+});
+document.getElementById('objHeight').addEventListener('input', function() {
+    if (labelObjects[selectedIdx] && labelObjects[selectedIdx].type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
+        document.getElementById('objWidth').value = this.value;
+    }
+});
 </script>
 </body>
 </html>

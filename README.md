@@ -1,0 +1,79 @@
+# Weidlich LVS - Barcode & Etiketten-System (WebApp) - v2.1.0
+
+Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
+
+Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+
+---
+
+## ✨ Neuheiten in Version 2.1.0
+Dieses Update fokussiert sich auf maximale Benutzerfreundlichkeit im Designer und volle Unterstützung für Spezial-Hardware:
+
+*   **⚡ Aktiver Designer:** Formate (Breite/Höhe) ändern sich jetzt in Echtzeit beim Tippen. Kein Neuladen mehr nötig!
+*   **🔍 Power-Zoom (Auto-Scaling):** Winzige Etiketten (z.B. 12mm P-Touch) werden automatisch bis zu 5-fach vergrößert dargestellt.
+*   **🔳 QR-Code Perfektion:** Automatische 1:1 Synchronisierung und verzerrungsfreies Rendering (kein "Eiern" mehr).
+*   **📎 Vorlagen-Gedächtnis:** Das System merkt sich nun pro Projekt, welches Template (Zweckform, Brother etc.) als Basis dient.
+*   **🌀 Rollendrucker-Support:** Die Druckvorschau erkennt automatisch Endlos-Rollen (1x1 Layout) und blendet störende Bogen-Optionen aus.
+*   **🛡️ Cache-Isolation:** Projekte beeinflussen sich nicht mehr gegenseitig durch Browser-Autovervollständigung.
+
+---
+
+## 🛠️ Das mentale Modell für Anwender: Ein Projekt = Ein Design
+
+Beim Schulen und Einweisen von neuen Benutzern ist dieses Prinzip das Wichtigste:
+
+**Was ist ein Projekt?**
+Ein Projekt ist praktisch wie ein **"Ordner für einen bestimmten Einsatzzweck"** (z.B. ein Projekt namens *"Große Paletten-Etiketten"* und ein anderes namens *"Kleine Regal-Labels"*). 
+
+In so einem Projekt merkt sich die Software dauerhaft genau drei Dinge:
+1. **Das Zubehör (Bogen-Layout)**: Wie groß ist das Etikett? (z.B. 100x50mm, 3-spaltig auf A4).
+2. **Das Aussehen (Design-Layout)**: Wo steht der Text? Wo ist der Barcode? Welche Schriftgröße wird genutzt? (inkl. der Platzhalter).
+3. **Die CSV-Spalten (Felder)**: Welche Daten gibt es grundsätzlich zum Einfügen? (Die Kopfzeilen der CSV Datei werden als Platzhalter wie `[~MatNr~]` in der Oberfläche bereitgestellt).
+
+**Was ist ein Projekt explizit *nicht*?**
+Es ist **kein Datenarchiv!** Die hochgeladenen CSV-Listen mit den echten Artikelnummern oder Adressen werden *nicht* im Projekt für die Ewigkeit gespeichert. Sie sind "Wegwerfware" und verfliegen, sobald die Arbeit erledigt und der Tab geschlossen ist.
+
+---
+
+## 🔄 Der tägliche Workflow für den Anwender
+
+Wenn der Mitarbeiter seinen Dienst beginnt, sieht der Standard-Ablauf wie folgt aus:
+
+1. **Projekt auswählen:**
+   Auf der Startseite wählt der Mitarbeiter den gewünschten Einsatzzweck (das fertige "Projekt") aus.
+
+2. **Daten "reinwerfen" (Reload CSV):**
+   Er klickt rechts oben auf den Button **`Reload csv`** und lädt die heutige, tagesaktuelle Export-Liste (z.B. 13.000 Zeilen aus dem ERP-System) hoch.
+
+3. **Auswählen & Drucken:**
+   Er sieht die Daten nun im Tab "DATEN". 
+   * Er kann nach relevanten Texten filtern.
+   * Er wählt per Checkbox genau die Artikel aus, für die physische Aufkleber benötigt werden (Tipp: Die Master-Checkbox im Tabellenkopf wählt alle an/ab).
+   * Danach klickt er auf "Drucken". Die Software generiert das PDF on-the-fly exakt aus der aktuellen Auswahl.
+
+4. **Flüchtiger Speicher & Dauerhaftes Design:**
+   Schließt der Mitarbeiter den Browser oder lässt die Session ablaufen, löschen sich die über 13.000 Artikeldaten automatisch aus dem aktiven Speicher. Es fallen keine Datenbank-Reste an. 
+   **Das Wichtigste:** Das Etiketten-Layout, die gewählte Vorlage (Template) und die Projekteinstellungen warten aber brav unverändert auf den Einsatz am nächsten Tag!
+
+5. **Spezialfall: Rollendrucker (z.B. Brother P-Touch)**
+   Bei Etiketten, die nur eine Spalte und eine Zeile haben (1x1), schaltet die Druckvorschau automatisch in den "Endlos-Modus". Statt eines A4-Rasters sieht der Anwender eine klare Rollen-Vorschau ohne komplizierte Startpositions-Auswahl.
+
+---
+
+💡 **Muss für jede neue CSV-Datei ein neues Projekt angelegt werden?**
+**Nein!** Wenn die CSV-Datei denselben Aufbau hat (also dieselben Spaltenüberschriften wie gestern), lädt der Anwender sie einfach per `Reload csv` in das *bestehende* Projekt ein. Das dortige Design bleibt erhalten und wendet sich automatisch fehlerfrei auf die tagesaktuellen Datenreihen an.
+
+Erst wenn ein völlig neues Etikettenmaß verwendet werden soll oder eine grundlegend andere CSV-Liste bezogen wird, sollte ein neues Projekt in der Hauptansicht angelegt werden.
+
+---
+
+## 🪄 Vollautomatisches Platzhalter-System (Header)
+
+Eine große Arbeitserleichterung für Anwender: **Platzhalter und Spaltennamen müssen zu keinem Zeitpunkt manuell eingetippt oder konfiguriert werden!** Das System ist darauf ausgelegt, sich selbst zu konfigurieren:
+
+1. **Beim ersten Import:** 
+   Das System liest vollautomatisch die oberste Zeile (den Header) der hochgeladenen CSV-Datei aus. Daraus generiert es für den Designer sofort fertige Klick-Bausteine (z.B. `[~MatNr~]`, `[~MHD~]`).
+2. **Fehlertoleranz:**
+   Sollte eine CSV-Spalte keine Überschrift haben, vergibt das System automatisch Notnamen wie "Spalte 3", damit keine Daten verloren gehen.
+3. **Lebende Updates ("Reload CSV"):**
+   Ändert sich der Export im ERP-System und es kommt morgen eine Spalte `Gewicht` hinzu? Kein Problem: Durch den Neulade-Vorgang ("Reload CSV") bemerkt das System das Update sofort und der neue Platzhalter `[~Gewicht~]` steht im Etikettendesigner ohne jeden Handgriff zur Verfügung.

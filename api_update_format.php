@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
+        $pId = $projectId;
         $stmt = $pdo->prepare("
             UPDATE label_formats SET 
             width_mm = ?, 
@@ -23,22 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin_left_mm = ?,
             margin_right_mm = ?,
             col_gap_mm = ?,
-            row_gap_mm = ?
+            row_gap_mm = ?,
+            template_id = ?
             WHERE project_id = ?
         ");
         
         $stmt->execute([
-            (float)$_POST['width_mm'],
-            (float)$_POST['height_mm'],
-            (int)$_POST['cols'],
-            (int)$_POST['rows'],
-            (float)$_POST['margin_top_mm'],
-            (float)$_POST['margin_bottom_mm'],
-            (float)$_POST['margin_left_mm'],
-            (float)$_POST['margin_right_mm'],
-            (float)$_POST['col_gap_mm'],
-            (float)$_POST['row_gap_mm'],
-            $projectId
+            (float)($_POST["width_mm_$pId"] ?? 0),
+            (float)($_POST["height_mm_$pId"] ?? 0),
+            (int)($_POST["cols_$pId"] ?? 1),
+            (int)($_POST["rows_$pId"] ?? 1),
+            (float)($_POST["margin_top_mm_$pId"] ?? 0),
+            (float)($_POST["margin_bottom_mm_$pId"] ?? 0),
+            (float)($_POST["margin_left_mm_$pId"] ?? 0),
+            (float)($_POST["margin_right_mm_$pId"] ?? 0),
+            (float)($_POST["col_gap_mm_$pId"] ?? 0),
+            (float)($_POST["row_gap_mm_$pId"] ?? 0),
+            ($_POST["template_id_$pId"] ? (int)$_POST["template_id_$pId"] : null),
+            $pId
         ]);
 
         echo json_encode(['success' => true]);

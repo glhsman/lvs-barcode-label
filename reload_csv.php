@@ -2,13 +2,8 @@
 session_start();
 require_once 'config.php';
 
-/**
- * import_csv.php
- * Verarbeitet den Upload einer CSV-Datei und speichert die Daten in die bestehende Struktur.
- */
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
-    $projectName = $_POST['project_name'] ?? 'Unbenanntes Projekt';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset($_POST['project_id'])) {
+    $projectId = (int)$_POST['project_id'];
     $file = $_FILES['csv_file']['tmp_name'];
 
     if (!$file || !is_uploaded_file($file)) {
@@ -18,12 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     try {
         $pdo->beginTransaction();
 
-        // 1. Projekt erstellen
-        $stmt = $pdo->prepare("INSERT INTO projects (name, description, created_at, modified_at) VALUES (?, 'Importiert aus Web-Interface', NOW(), NOW())");
-        $stmt->execute([$projectName]);
-        $projectId = $pdo->lastInsertId();
+        // 1. Alte Daten komplett löschen (nur Datensätze und Felder, NICHT das Design/Format)
+        $pdo->prepare("DELETE FROM record_values WHERE record_id IN (SELECT id FROM data_records WHERE project_id = ?)")->execute([$projectId]);
+        $pdo->prepare("DELETE FROM data_records WHERE project_id = ?")->execute([$projectId]);
+        $pdo->prepare("DELETE FROM project_fields WHERE project_id = ?")->execute([$projectId]);
 
-        // 2. CSV einlesen und Kodierung behandeln
+        // 2. Neue CSV einlesen
         $csvData = file_get_contents($file);
         
         // Erkennung der Kodierung (Windows-1252 ist bei CSV aus Excel oft Standard)
@@ -43,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
         if (!$header) throw new Exception("Ungültiges CSV-Format (Header konnte nicht gelesen werden).");
 
-        // 3. Spalten (Fields) anlegen
+        // 3. Spalten (Fields) neu anlegen
         $fieldIds = [];
         foreach ($header as $index => $colName) {
             $colName = trim($colName);
@@ -54,26 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             $fieldIds[$index] = $pdo->lastInsertId();
         }
 
-        // 4. Datensätze in die Session laden (Flüchtig / Nirvana nach Session-Ende)
-        // Die Datenbank bleibt sauber!
+        // 4. In die Session laden
         $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
         $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig alle selektiert
-        $recordCount = count($lines) - 1; // Header abziehen
         
-        // 5. Standard-Etikettenformat anlegen
-        $stmt = $pdo->prepare("INSERT INTO label_formats (project_id, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`) 
-                               VALUES (?, 100.0, 50.0, 2.0, 2.0, 2.0, 2.0, 1, 1)");
-        $stmt->execute([$projectId]);
-
         $pdo->commit();
-        header("Location: index.php?success=1&count=" . $recordCount);
+        
+        // Nach erfolgreichem Reload sofort zurück zum Projekt
+        header("Location: project_view.php?id={$projectId}");
         exit;
 
     } catch (Exception $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        die("Fehler beim Import: " . $e->getMessage());
+        die("Fehler beim Reload der CSV: " . $e->getMessage());
     }
 } else {
     header("Location: index.php");

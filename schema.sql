@@ -26,30 +26,12 @@ CREATE TABLE IF NOT EXISTS project_fields (
     INDEX idx_project (project_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ─── Datensätze ───────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS data_records (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    project_id  INT NOT NULL,
-    selected    TINYINT(1) NOT NULL DEFAULT 1,
-    position    INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    INDEX idx_project (project_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ─── Feldwerte pro Datensatz ──────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS record_values (
-    record_id   INT NOT NULL,
-    field_id    INT NOT NULL,
-    value       TEXT,
-    PRIMARY KEY (record_id, field_id),
-    FOREIGN KEY (record_id) REFERENCES data_records(id) ON DELETE CASCADE,
-    FOREIGN KEY (field_id)  REFERENCES project_fields(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── Etikettenformat pro Projekt ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS label_formats (
     id               INT AUTO_INCREMENT PRIMARY KEY,
     project_id       INT NOT NULL UNIQUE,
+    template_id      INT NULL,
     manufacturer     VARCHAR(100),
     product_name     VARCHAR(100),
     width_mm         FLOAT NOT NULL DEFAULT 100.0,
@@ -81,21 +63,6 @@ CREATE TABLE IF NOT EXISTS label_objects (
     INDEX idx_project (project_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ─── Gespeicherte Etiketten (fertig gerendert) ────────────────────────────────
-CREATE TABLE IF NOT EXISTS saved_labels (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    project_id   INT NOT NULL,
-    record_id    INT,
-    name         VARCHAR(255),
-    image_data   LONGBLOB NOT NULL,
-    image_format VARCHAR(10) DEFAULT 'PNG',
-    dpi          INT DEFAULT 300,
-    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
-    created_by   VARCHAR(100),
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (record_id)  REFERENCES data_records(id) ON DELETE SET NULL,
-    INDEX idx_project (project_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── Globale Etiketten-Vorlagen (nur Formate) ──────────────────────────────────
 CREATE TABLE IF NOT EXISTS global_label_templates (

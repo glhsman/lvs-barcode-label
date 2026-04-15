@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once 'config.php';
 
 $projectId = $_GET['id'] ?? null;
@@ -21,21 +22,34 @@ $stmt = $pdo->prepare("SELECT * FROM label_formats WHERE project_id = ?");
 $stmt->execute([$projectId]);
 $format = $stmt->fetch();
 
-// Ausgewählte Datensätze laden
-$stmt = $pdo->prepare("
-    SELECT dr.id, rv.value, pf.name as field_name
-    FROM data_records dr
-    JOIN project_fields pf ON pf.project_id = dr.project_id
-    LEFT JOIN record_values rv ON rv.record_id = dr.id AND rv.field_id = pf.id
-    WHERE dr.project_id = ? AND dr.selected = 1
-    ORDER BY dr.position ASC, pf.position ASC
-");
-$stmt->execute([$projectId]);
-$rawData = $stmt->fetchAll();
-
+// Ausgewählte Datensätze laden (aus Session!)
 $selectedRecords = [];
-foreach ($rawData as $row) {
-    $selectedRecords[$row['id']][$row['field_name']] = $row['value'];
+if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
+    // Projekt-Felder laden
+    $stmt = $pdo->prepare("SELECT * FROM project_fields WHERE project_id = ? ORDER BY position ASC");
+    $stmt->execute([$projectId]);
+    $fields = $stmt->fetchAll();
+
+    $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
+    $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+    if ($encoding !== 'UTF-8') $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
+    $lines = explode("\n", str_replace("\r", "", $csvData));
+    $headerLine = array_shift($lines);
+    $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
+    
+    foreach ($lines as $idx => $line) {
+        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? true;
+        if (!$selected) continue;
+        
+        $line = trim($line);
+        if (!$line) continue;
+        $row = str_getcsv($line, $delimiter);
+        
+        $selectedRecords[$idx] = [];
+        foreach ($fields as $colIdx => $field) {
+            $selectedRecords[$idx][$field['name']] = $row[$colIdx] ?? '';
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -111,7 +125,23 @@ foreach ($rawData as $row) {
     <div class="row align-items-start">
         <div class="col-lg-6">
             <h2 class="mb-4">Druckkonfiguration</h2>
-            <div class="card mb-4">
+            <?php if ((int)$format['cols'] === 1 && (int)$format['rows'] === 1): ?>
+                <div class="card mb-4 border-info">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="bg-info bg-opacity-10 p-3 rounded-circle me-3">
+                            <i class="bi bi-printer-fill fs-3 text-info"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">Rollen-Drucker (Endlos)</h5>
+                            <p class="text-secondary small mb-0">Einzel-Etikettendruck (z.B. Brother P-Touch).<br>Die Auswahl einer Startposition entfällt.</p>
+                        </div>
+                        <span id="startIndexLabel" style="display:none;">1</span>
+                    </div>
+                </div>
+                <div class="card mb-4" style="display: none;">
+            <?php else: ?>
+                <div class="card mb-4">
+            <?php endif; ?>
                 <div class="card-body">
                     <h5 class="card-title mb-3">Starteinstellungen</h5>
                     <p class="text-secondary small">
@@ -121,7 +151,7 @@ foreach ($rawData as $row) {
                     
                     <div class="alert alert-info py-2 small d-flex align-items-center">
                         <i class="bi bi-info-circle-fill me-2"></i>
-                        <span>Aktuell gewählt: <strong>Etikett <span id="startIndexLabel">1</span></strong></span>
+                        <span>Papier-Startposition: <strong>Aufkleber Nr. <span id="startIndexLabel">1</span></strong></span>
                     </div>
 
                     <div class="mt-4">
@@ -133,8 +163,9 @@ foreach ($rawData as $row) {
             </div>
 
             <div class="card">
-                <div class="card-header border-bottom-0 py-3">
-                    <span class="fw-bold"><i class="bi bi-list-check me-2"></i>Druckliste</span>
+                <div class="card-header border-bottom-0 py-3 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-list-check me-2"></i>Zu druckende Datensätze</span>
+                    <span class="badge bg-primary rounded-pill"><?= count($selectedRecords) ?></span>
                 </div>
                 <div class="card-body p-0" style="max-height: 40vh; overflow-y: auto;">
                     <ul class="list-group list-group-flush bg-transparent">
@@ -152,22 +183,31 @@ foreach ($rawData as $row) {
         </div>
 
         <div class="col-lg-6">
-            <div class="preview-container text-center">
-                <h5 class="mb-4 text-primary">Visuelle Hilfe: Bogen-Layout</h5>
-                <div id="sheetGrid" class="sheet-preview" style="grid-template-columns: repeat(<?= $format['cols'] ?>, 1fr); grid-template-rows: repeat(<?= $format['rows'] ?>, 1fr);">
-                    <?php
-                    $totalLabels = $format['cols'] * $format['rows'];
-                    for ($i = 1; $i <= $totalLabels; $i++) {
-                        $col = (($i - 1) % $format['cols']) + 1;
-                        $row = floor(($i - 1) / $format['cols']) + 1;
-                        echo "<div class='label-cell' data-index='$i' onclick='setStartIndex($i)'>$i</div>";
-                    }
-                    ?>
+            <?php if ((int)$format['cols'] === 1 && (int)$format['rows'] === 1): ?>
+                <div class="preview-container text-center py-5 d-flex flex-column align-items-center justify-content-center" style="min-height: 100%;">
+                    <i class="bi bi-receipt mb-3 text-secondary" style="font-size: 5rem; opacity: 0.5;"></i>
+                    <h5 class="text-primary mb-2">Ansicht für Rollen-Layout</h5>
+                    <p class="text-secondary small w-75 mx-auto">
+                        Dein Layout generiert pro PDF-Seite genau ein Etikett.<br>
+                        Der Drucker zieht das Band automatisch so weit ein, wie deine hinterlegte mm-Länge dieses Projekts es verlangt.
+                    </p>
                 </div>
-                <div class="mt-3 text-secondary small">
-                    Klicke auf das gewünschte Start-Etikett (Zelle)
+            <?php else: ?>
+                <div class="preview-container text-center">
+                    <h5 class="mb-4 text-primary">Visuelle Hilfe: Bogen-Layout</h5>
+                    <div id="sheetGrid" class="sheet-preview" style="grid-template-columns: repeat(<?= $format['cols'] ?>, 1fr); grid-template-rows: repeat(<?= $format['rows'] ?>, 1fr);">
+                        <?php
+                        $totalLabels = $format['cols'] * $format['rows'];
+                        for ($i = 1; $i <= $totalLabels; $i++) {
+                            echo "<div class='label-cell' data-index='$i' onclick='setStartIndex($i)'>$i</div>";
+                        }
+                        ?>
+                    </div>
+                    <div class="mt-3 text-secondary small">
+                        Klicke auf das gewünschte Start-Etikett (Zelle)
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

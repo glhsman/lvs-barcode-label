@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once 'config.php';
 
 $projectId = $_GET['id'] ?? null;
@@ -21,22 +22,34 @@ $stmt = $pdo->prepare("SELECT * FROM label_objects WHERE project_id = ? ORDER BY
 $stmt->execute([$projectId]);
 $objects = $stmt->fetchAll();
 
-// Gewählte Datensätze laden
-$stmt = $pdo->prepare("
-    SELECT dr.id as record_id, pf.name as field_name, rv.value 
-    FROM data_records dr
-    JOIN project_fields pf ON pf.project_id = dr.project_id
-    JOIN record_values rv ON rv.record_id = dr.id AND rv.field_id = pf.id
-    WHERE dr.project_id = ? AND dr.selected = 1
-    ORDER BY dr.position ASC, pf.position ASC
-");
-$stmt->execute([$projectId]);
-$rawData = $stmt->fetchAll();
-
+// Gewählte Datensätze laden (aus Session!)
 $records = [];
-foreach ($rawData as $row) {
-    if (!isset($records[$row['record_id']])) $records[$row['record_id']] = [];
-    $records[$row['record_id']][$row['field_name']] = $row['value'];
+if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
+    // Projekt-Felder laden
+    $stmt = $pdo->prepare("SELECT * FROM project_fields WHERE project_id = ? ORDER BY position ASC");
+    $stmt->execute([$projectId]);
+    $fields = $stmt->fetchAll();
+
+    $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
+    $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+    if ($encoding !== 'UTF-8') $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
+    $lines = explode("\n", str_replace("\r", "", $csvData));
+    $headerLine = array_shift($lines);
+    $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
+    
+    foreach ($lines as $idx => $line) {
+        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? true;
+        if (!$selected) continue; // Nur gewählte drucken!
+        
+        $line = trim($line);
+        if (!$line) continue;
+        $row = str_getcsv($line, $delimiter);
+        
+        $records[$idx] = [];
+        foreach ($fields as $colIdx => $field) {
+            $records[$idx][$field['name']] = $row[$colIdx] ?? '';
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -65,6 +78,12 @@ foreach ($rawData as $row) {
     </style>
 </head>
 <body>
+
+<div class="no-print" style="position: fixed; top: 15px; right: 20px; z-index: 1000;">
+    <button onclick="window.print()" style="background-color: #10b981; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: bold;">
+        🖨️ Jetzt Drucken
+    </button>
+</div>
 
 <?php
 if (empty($records)) {
@@ -124,11 +143,20 @@ if ($pageOpen) echo '</div>';
 window.onload = () => {
     document.querySelectorAll('.barcode-render').forEach(canvas => {
         try {
-            bwipjs.toCanvas(canvas, {
-                bcid: canvas.getAttribute('data-type'),
+            let bType = canvas.getAttribute('data-type');
+            let isQR = bType === 'qr';
+            if (isQR) bType = 'qrcode';
+            
+            const opts = {
+                bcid: bType,
                 text: canvas.getAttribute('data-content'),
-                scale: 3, height: 10, includetext: true
-            });
+                scale: 3, 
+                includetext: !isQR
+            };
+            if(!isQR) opts.height = 10;
+            
+            bwipjs.toCanvas(canvas, opts);
+            canvas.style.objectFit = 'contain';
         } catch (e) { console.error(e); }
     });
 };
