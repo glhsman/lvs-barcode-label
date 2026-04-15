@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         // Header extrahieren
         $headerLine = array_shift($lines);
         $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
-        $header = str_getcsv($headerLine, $delimiter);
+        $header = str_getcsv($headerLine, $delimiter, '"', '');
 
         if (!$header) throw new Exception("Ungültiges CSV-Format (Header konnte nicht gelesen werden).");
 

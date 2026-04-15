@@ -1,4 +1,4 @@
-# Weidlich LVS - Barcode & Etiketten-System (WebApp) - v2.1.0
+# Weidlich LVS - Barcode & Etiketten-System (WebApp) - v2.1.1
 
 Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
 
@@ -6,8 +6,19 @@ Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur
 
 ---
 
+## ✨ Neuheiten in Version 2.1.1
+Dieses Wartungs- und Performance-Update verbessert die Stabilität auf modernen Server-Umgebungen:
+
+*   **🚀 High-Performance Datentabelle:** Die Suche in großen Datensätzen (13.000+ Zeilen) friert die Webseite nicht mehr ein. Durch intelligentes *Debouncing* und optimierte DOM-Zugriffe reagiert der Filter jetzt extrem flüssig.
+*   **🐘 PHP 8.4 Ready:** Kompatibilitäts-Fix für `str_getcsv()`. Die Applikation ist nun für zukünftige PHP-Versionen gerüstet und wirft keine "Deprecated"-Warnungen mehr.
+*   **📂 Pfad-Stabilität:** Verbesserte CSV-Parsing-Logik, die nun auch problemlos Backslashes (z.B. in Windows-Dateipfaden) innerhalb der Datenfelder verarbeitet.
+*   **🏷️ Neues Markendesign:** Integration des offiziellen `barcode_green.ico` Favicons für alle Ansichten.
+*   **🧹 Datenbank-Cleanup:** Bereinigung veralteter SQL-Befehle im Reload-Prozess für eine saubere Struktur.
+
+---
+
 ## ✨ Neuheiten in Version 2.1.0
-Dieses Update fokussiert sich auf maximale Benutzerfreundlichkeit im Designer und volle Unterstützung für Spezial-Hardware:
+Dieses Update fokussierte sich auf maximale Benutzerfreundlichkeit im Designer und volle Unterstützung für Spezial-Hardware:
 
 *   **⚡ Aktiver Designer:** Formate (Breite/Höhe) ändern sich jetzt in Echtzeit beim Tippen. Kein Neuladen mehr nötig!
 *   **🔍 Power-Zoom (Auto-Scaling):** Winzige Etiketten (z.B. 12mm P-Touch) werden automatisch bis zu 5-fach vergrößert dargestellt.

@@ -43,7 +43,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
         
         $line = trim($line);
         if (!$line) continue;
-        $row = str_getcsv($line, $delimiter);
+        $row = str_getcsv($line, $delimiter, '"', '');
         
         $records[$idx] = [];
         foreach ($fields as $colIdx => $field) {
@@ -57,6 +57,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
 <head>
     <meta charset="UTF-8">
     <title>Druckvorschau - <?= htmlspecialchars($project['name']) ?></title>
+    <link rel="icon" type="image/x-icon" href="barcode_green.ico">
     <style>
         @page { size: A4; margin: 0; }
         body { margin: 0; padding: 0; background: #f0f0f0; font-family: Arial, sans-serif; }

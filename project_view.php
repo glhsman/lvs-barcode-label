@@ -34,7 +34,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     foreach ($lines as $idx => $line) {
         $line = trim($line);
         if (!$line) continue;
-        $row = str_getcsv($line, $delimiter);
+        $row = str_getcsv($line, $delimiter, '"', '');
         $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? true;
         
         $values = [];
@@ -51,6 +51,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($project['name']) ?> - Details</title>
+    <link rel="icon" type="image/x-icon" href="barcode_green.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -179,7 +180,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                     <tr>
                                         <th></th>
                                         <?php foreach($fields as $idx => $f): ?>
-                                            <th><input type="text" class="form-control form-control-sm bg-dark text-light border-secondary column-filter" data-col="<?= $idx + 1 ?>" placeholder="Filter..." onkeyup="filterTable()"></th>
+                                            <th><input type="text" class="form-control form-control-sm bg-dark text-light border-secondary column-filter" data-col="<?= $idx + 1 ?>" placeholder="Filter..." oninput="filterTable()"></th>
                                         <?php endforeach; ?>
                                     </tr>
                                 </thead>
@@ -364,26 +365,39 @@ function updateSelection(recordId, isSelected) {
     fetch('api_update_selection.php', { method: 'POST', body: fd });
 }
 
+let filterTimeout;
 function filterTable() {
-    const filters = Array.from(document.querySelectorAll('.column-filter')).map(input => ({
-        col: parseInt(input.getAttribute('data-col')),
-        val: input.value.toLowerCase()
-    }));
-    const rows = document.getElementById('data-table-body').getElementsByTagName('tr');
-    for (let i = 0; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName('td');
-        let showRow = true;
-        for (const filter of filters) {
-            if (filter.val) {
-                const cellText = cells[filter.col].innerText.toLowerCase();
-                if (!cellText.includes(filter.val)) {
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(() => {
+        const filters = Array.from(document.querySelectorAll('.column-filter'))
+            .filter(i => i.value.trim() !== '')
+            .map(input => ({
+                col: parseInt(input.getAttribute('data-col')),
+                val: input.value.toLowerCase()
+            }));
+        
+        const rows = document.getElementById('data-table-body').rows;
+        const rowCount = rows.length;
+
+        if (filters.length === 0) {
+            for (let i = 0; i < rowCount; i++) rows[i].style.display = '';
+            return;
+        }
+        
+        for (let i = 0; i < rowCount; i++) {
+            const cells = rows[i].cells;
+            let showRow = true;
+            for (let f = 0; f < filters.length; f++) {
+                const filter = filters[f];
+                // textContent ist deutlich schneller als innerText, da es kein Layout-Reflow erzwingt
+                if (!cells[filter.col].textContent.toLowerCase().includes(filter.val)) {
                     showRow = false;
                     break;
                 }
             }
+            rows[i].style.display = showRow ? '' : 'none';
         }
-        rows[i].style.display = showRow ? '' : 'none';
-    }
+    }, 300); // 300ms Verzögerung abwarten
 }
 
 function renderObjects() {

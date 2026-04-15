@@ -13,9 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
     try {
         $pdo->beginTransaction();
 
-        // 1. Alte Daten komplett löschen (nur Datensätze und Felder, NICHT das Design/Format)
-        $pdo->prepare("DELETE FROM record_values WHERE record_id IN (SELECT id FROM data_records WHERE project_id = ?)")->execute([$projectId]);
-        $pdo->prepare("DELETE FROM data_records WHERE project_id = ?")->execute([$projectId]);
+        // 1. Alte Felder löschen (nur die Spaltendefinitionen, da Datensätze in der Session liegen)
         $pdo->prepare("DELETE FROM project_fields WHERE project_id = ?")->execute([$projectId]);
 
         // 2. Neue CSV einlesen
@@ -34,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
         // Header extrahieren
         $headerLine = array_shift($lines);
         $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
-        $header = str_getcsv($headerLine, $delimiter);
+        $header = str_getcsv($headerLine, $delimiter, '"', '');
 
         if (!$header) throw new Exception("Ungültiges CSV-Format (Header konnte nicht gelesen werden).");
 
