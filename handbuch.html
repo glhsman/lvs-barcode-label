@@ -401,36 +401,86 @@
                         <div class="accordion-item bg-transparent text-white border-secondary">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f1">
-                                    Wie schnell kann ich suchen?
+                                    Wie schnell kann ich suchen? (Performance)
                                 </button>
                             </h2>
                             <div id="f1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body small text-muted">
-                                    Dank der High-Performance Filterung können Sie in Echtzeit in über 13.000 Zeilen suchen. Geben Sie einfach einen Teilbegriff in das Suchfeld über der jeweiligen Spalte ein.
+                                    Dank der High-Performance Filterung können Sie in Echtzeit in über 13.000 Zeilen suchen. Geben Sie einfach einen Teilbegriff in das Suchfeld über der jeweiligen Spalte ein. Die Liste wird gefiltert, sobald Sie aufhören zu tippen (0,3 Sek. Verzögerung).
                                 </div>
                             </div>
                         </div>
                         <div class="accordion-item bg-transparent text-white border-secondary">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f2">
-                                    Kann ich Excel-Dateien nutzen?
+                                    Kann ich Excel-Dateien direkt nutzen?
                                 </button>
                             </h2>
                             <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body small text-muted">
-                                    Speichern Sie Ihre Excel-Datei einfach als <strong>CSV (Trennzeichen-getrennt)</strong> ab. Das System unterstützt sowohl Komma als auch Semikolon als Trenner und erkennt diese automatisch.
+                                    Nein, das System benötigt das universelle <strong>CSV-Format</strong>. Speichern Sie Ihre Excel-Datei einfach als <code>CSV (Trennzeichen-getrennt) (*.csv)</code> ab. Achten Sie darauf, dass die erste Zeile die Spaltenüberschriften enthält.
                                 </div>
                             </div>
                         </div>
                         <div class="accordion-item bg-transparent text-white border-secondary">
                             <h2 class="accordion-header">
-                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f3">
-                                    Warum sind meine Daten weg?
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f4">
+                                    Was passiert, wenn sich der Aufbau der CSV-Datei ändert?
                                 </button>
                             </h2>
-                            <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body small text-muted">
-                                    Das System speichert Ihre Export-Listen nur temporär in der Session. Dies dient der Sicherheit und der Performance. Das <strong>Design</strong> des Etiketts bleibt jedoch im Hintergrund dauerhaft in der Datenbank gespeichert und ist morgen sofort wieder bereit.
+                                    Wenn neue Spalten hinzukommen, erkennt das System diese beim nächsten „Reload CSV“ automatisch und stellt sie im Designer als neue Platzhalter bereit. Wenn Spalten entfernt werden, die Sie im Etikett verwendet haben, bleibt der Platzhalter im Design leer – Sie sollten das Design dann kurz anpassen.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f5">
+                                    Gibt es eine maximale Anzahl an Artikeln?
+                                </button>
+                            </h2>
+                            <div id="f5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Das System ist für Listen mit bis zu <strong>15.000 bis 20.000 Zeilen</strong> optimiert. Bei noch größeren Dateien kann die Ladezeit der Tabelle im Browser zunehmen. Da die Daten in der Session (RAM) liegen, hängt die Kapazität auch vom verfügbaren Arbeitsspeicher Ihres PCs/Servers ab.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f6">
+                                    Warum ist mein gedruckter Barcode nicht lesbar?
+                                </button>
+                            </h2>
+                            <div id="f6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Dies hat meist zwei Ursachen: <br>
+                                    1. <strong>Skalierung:</strong> Prüfen Sie im Druckdialog, ob das PDF auf "100%" (nicht "Anpassen") steht. <br>
+                                    2. <strong>Größe:</strong> Ein Barcode benötigt eine Mindestbreite, damit der Scanner die Striche unterscheiden kann. Vergrößern Sie das Barcode-Objekt im Designer etwas.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f7">
+                                    Unterstützt das System Sonderzeichen?
+                                </button>
+                            </h2>
+                            <div id="f7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Ja. Das System konvertiert alle hochgeladenen Daten automatisch nach <strong>UTF-8</strong> (Unicode). Umlaute (ä, ö, ü) und Sonderzeichen in Artikelbezeichnungen werden daher korrekt auf den Etiketten ausgegeben.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f8">
+                                    Kann ich das System auf dem Tablet oder Smartphone nutzen?
+                                </button>
+                            </h2>
+                            <div id="f8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Grundsätzlich ja, da es webbasiert ist. Der <strong>Designer</strong> ist jedoch für die präzise Bedienung mit Maus/Trackpad an einem PC optimiert. Der reine Druck-Vorgang und das Auswählen von Daten funktioniert aber auch problemlos auf mobilen Endgeräten.
                                 </div>
                             </div>
                         </div>
