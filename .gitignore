@@ -1,0 +1,25 @@
+# PHP / XAMPP Core
+config.php
+config.ini
+*.log
+*.tmp
+temp/
+tmp/
+
+# Sync & Backup
+sync.ffs_db
+*.bak
+*.swp
+
+# CSV & Data (Importe ausschließen, da oft privat)
+*.csv
+uploads/
+
+# OS-Specific
+.DS_Store
+Thumbs.db
+
+# Editor-Specific
+.vscode/
+.idea/
+.git/

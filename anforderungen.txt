@@ -1,0 +1,3 @@
+Aufbau einer Webseite zum Drucken von Etiketten für die Warenwirtschaft. Alles mit php und javascript.
+Einlesen von csv-Dateien,analog der offline App aus dem Verzeichnis "C:\Users\fschoenbrodt\Downloads\Projekte\barcode-lvs-python".
+
