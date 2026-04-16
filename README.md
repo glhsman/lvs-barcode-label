@@ -1,8 +1,20 @@
-# Weidlich LVS - Barcode & Etiketten-System (WebApp) - v2.1.1
+# Weidlich LVS - Barcode & Etiketten-System (WebApp) - v2.2.0
 
 Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
 
 Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+
+---
+
+## ✨ Neuheiten in Version 2.2.0
+Dieses Feature-Update bringt mächtige Werkzeuge für die Präzisions-Kalibrierung und Gestaltung:
+
+*   **🎯 Kalibrierungs-Modus:** Ein zuschaltbarer 1mm-Rahmen hilft dabei, den Ausdruck millimetergenau auf dem Etikett zu prüfen.
+*   **⚖️ Druck-Skalierung:** Feinjustierung der Ausgabegröße in Prozent (z.B. 99.5%). Damit lassen sich hardwarebedingte Abweichungen des Druckers perfekt ausgleichen.
+*   **↕️ Senkrechter Text:** Texte und Zahlen können nun per Klick senkrecht (gestapelt) angeordnet werden – ideal für schmale Randbereiche.
+*   **🎨 Erweiterte Formatierung:** Neue Editor-Optionen für **Fett** und *Kursiv* bei allen Textobjekten.
+*   **Barcode-Tuning:** Die Klartextzeile unter dem Barcode kann jetzt pro Objekt ein- oder ausgeblendet werden.
+*   **💾 Pro-Projekt-Settings:** Alle Kalibrierungs- und Formatierungseinstellungen werden dauerhaft im Projekt gespeichert.
 
 ---
 

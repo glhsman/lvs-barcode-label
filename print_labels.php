@@ -233,7 +233,9 @@ function setStartIndex(idx) {
 setStartIndex(1);
 
 function startPrinting() {
-    const url = `generate_pdf.php?id=<?= $projectId ?>&start=${startIndex}`;
+    const urlParams = new URLSearchParams(window.location.search);
+    const cal = urlParams.get('cal') || 0;
+    const url = `generate_pdf.php?id=<?= $projectId ?>&start=${startIndex}&cal=${cal}`;
     window.open(url, '_blank');
 }
 </script>

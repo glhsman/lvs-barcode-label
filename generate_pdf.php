@@ -4,6 +4,7 @@ require_once 'config.php';
 
 $projectId = $_GET['id'] ?? null;
 $startIndex = isset($_GET['start']) ? (int)$_GET['start'] : 1;
+$showCalibration = isset($_GET['cal']) && $_GET['cal'] == '1';
 
 if (!$projectId) die("Ungültige Projekt-ID");
 
@@ -70,7 +71,15 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
             position: absolute; width: <?= $format['width_mm'] ?>mm; height: <?= $format['height_mm'] ?>mm;
             box-sizing: border-box; overflow: hidden;
         }
-        .label-object { position: absolute; overflow: hidden; }
+        .calibration-frame {
+            position: absolute;
+            box-sizing: border-box;
+            border: 1mm solid #ff0000;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .label-object { position: absolute; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .text-vertical { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; }
         @media print {
             body { background: none; }
             .page { margin: 0; box-shadow: none; }
@@ -113,7 +122,16 @@ foreach ($printQueue as $idx => $record) {
     $left = $format['margin_left_mm'] + ($col * ($format['width_mm'] + $format['col_gap_mm']));
     $top = $format['margin_top_mm'] + ($row * ($format['height_mm'] + $format['row_gap_mm']));
 
+    $scale = (float)($format['print_scale'] ?? 100.0) / 100.0;
+    $scaleStyle = ($scale != 1.0) ? "transform: scale($scale); transform-origin: top left;" : "";
+
     echo "<div class='label' style='left:{$left}mm; top:{$top}mm;'>";
+    echo "<div style='width:100%; height:100%; position:relative; {$scaleStyle}'>";
+    if ($showCalibration) {
+        $frameW = $format['width_mm'] - 1;
+        $frameH = $format['height_mm'] - 1;
+        echo "<div class='calibration-frame' style='left:0.5mm; top:0.5mm; width:{$frameW}mm; height:{$frameH}mm;'></div>";
+    }
     if ($record) {
         foreach ($objects as $obj) {
             $p = $obj['properties'];
@@ -128,13 +146,18 @@ foreach ($printQueue as $idx => $record) {
             
             if ($obj['type'] === 'text') {
                 $fs = $p['font_size'] ?? 10;
-                echo "<div class='label-object' style='{$style} font-size:{$fs}pt;'>".htmlspecialchars($txt)."</div>";
+                $bold = !empty($p['bold']) ? 'font-weight:bold;' : '';
+                $italic = !empty($p['italic']) ? 'font-style:italic;' : '';
+                $vClass = !empty($p['vertical']) ? 'text-vertical' : '';
+                echo "<div class='label-object $vClass' style='{$style} font-size:{$fs}pt; {$bold} {$italic}'>".htmlspecialchars($txt)."</div>";
             } else {
-                echo "<div class='label-object' style='{$style}'><canvas class='barcode-render' data-type='".($p['barcode_type']??'code128')."' data-content='".htmlspecialchars($txt)."' style='width:100%; height:100%;'></canvas></div>";
+                $showHTR = isset($p['show_htr']) ? ($p['show_htr'] ? 'true' : 'false') : 'true';
+                echo "<div class='label-object' style='{$style}'><canvas class='barcode-render' data-type='".($p['barcode_type']??'code128')."' data-content='".htmlspecialchars($txt)."' data-htr='{$showHTR}' style='width:100%; height:100%;'></canvas></div>";
             }
         }
     }
-    echo "</div>";
+    echo "</div>"; // End of scale div
+    echo "</div>"; // End of label div
 }
 if ($pageOpen) echo '</div>';
 ?>
@@ -152,7 +175,7 @@ window.onload = () => {
                 bcid: bType,
                 text: canvas.getAttribute('data-content'),
                 scale: 3, 
-                includetext: !isQR
+                includetext: isQR ? false : (canvas.getAttribute('data-htr') !== 'false')
             };
             if(!isQR) opts.height = 10;
             

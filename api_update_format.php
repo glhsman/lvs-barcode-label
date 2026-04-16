@@ -25,7 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin_right_mm = ?,
             col_gap_mm = ?,
             row_gap_mm = ?,
-            template_id = ?
+            template_id = ?,
+            show_calibration_border = ?,
+            print_scale = ?
             WHERE project_id = ?
         ");
         
@@ -41,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (float)($_POST["col_gap_mm_$pId"] ?? 0),
             (float)($_POST["row_gap_mm_$pId"] ?? 0),
             ($_POST["template_id_$pId"] ? (int)$_POST["template_id_$pId"] : null),
+            (isset($_POST["show_calibration_border_$pId"]) ? 1 : 0),
+            (float)($_POST["print_scale_$pId"] ?? 100.0),
             $pId
         ]);
 

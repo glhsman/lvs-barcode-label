@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS label_formats (
     `rows`           INT   NOT NULL DEFAULT 1,
     col_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
     row_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
+    show_calibration_border TINYINT(1) DEFAULT 0,
+    print_scale      FLOAT NOT NULL DEFAULT 100.0,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

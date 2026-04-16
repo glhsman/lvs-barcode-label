@@ -132,11 +132,25 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                         <div class="col-6"><label class="form-label-sm">V-Abst.</label><input type="number" step="0.1" name="row_gap_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (float)$format['row_gap_mm'] ?>"></div>
                     </div>
                     <div class="form-label-sm mt-3 mb-1">Ränder (Ob / Un / Li / Re)</div>
-                    <div class="row g-1 mb-4">
+                    <div class="row g-1 mb-2">
                         <div class="col-3"><input type="number" step="0.1" name="margin_top_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_top_mm'] ?>"></div>
                         <div class="col-3"><input type="number" step="0.1" name="margin_bottom_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_bottom_mm'] ?>"></div>
                         <div class="col-3"><input type="number" step="0.1" name="margin_left_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_left_mm'] ?>"></div>
                         <div class="col-3"><input type="number" step="0.1" name="margin_right_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_right_mm'] ?>"></div>
+                    </div>
+                    <div class="row g-2 mb-3 align-items-end">
+                        <div class="col-7">
+                            <div class="form-check m-0">
+                                <input class="form-check-input bg-dark border-secondary" type="checkbox" name="show_calibration_border_<?= $projectId ?>" id="showCalibrationBorder" onchange="renderObjects()" <?= ($format['show_calibration_border'] ?? 0) ? 'checked' : '' ?>>
+                                <label class="form-check-label small text-info" for="showCalibrationBorder" style="cursor:pointer; font-size: 0.75rem;">
+                                    <i class="bi bi-bounding-box-circles me-1"></i> Kalib.-Rahmen
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label-sm" style="font-size: 0.65rem;">Skalier. (%)</label>
+                            <input type="number" step="0.1" name="print_scale_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1 text-center" value="<?= (float)($format['print_scale'] ?? 100.0) ?>">
+                        </div>
                     </div>
                 </form>
                 <button class="btn btn-primary btn-sm w-100" onclick="saveFormat()"><i class="bi bi-check-circle me-1"></i> Template zuweisen</button>
@@ -221,7 +235,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-V2.0.1-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.2.0-STABLE</div>
                         </div>
                     </div>
                 </div>
@@ -255,6 +269,29 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             <div class="row g-2 mt-2">
                 <div class="col-6"><label class="form-label-sm">Breite der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objWidth"></div>
                 <div class="col-6"><label class="form-label-sm">Höhe der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objHeight"></div>
+            </div>
+            <!-- Formatierungs-Optionen -->
+            <div id="textOptionsGroup" class="mt-4 pt-3 border-top border-secondary">
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="objBold">
+                        <label class="form-check-label small" for="objBold">Fett (B)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="objItalic">
+                        <label class="form-check-label small" for="objItalic">Kursiv (I)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="objVertical">
+                        <label class="form-check-label small" for="objVertical">Senkrecht</label>
+                    </div>
+                </div>
+            </div>
+            <div id="barcodeOptionsGroup" class="mt-4 pt-3 border-top border-secondary">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="objShowHTR">
+                    <label class="form-check-label small" for="objShowHTR">Klartextzeile sichtbar</label>
+                </div>
             </div>
         </div>
         <div class="modal-footer border-top-0 pt-0">
@@ -405,6 +442,36 @@ function renderObjects() {
     const canv = document.getElementById('designer-canvas');
     if(!canv) return;
     canv.innerHTML = '';
+
+    const pId = <?= $projectId ?>;
+    const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value) || 10;
+    const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value) || 10;
+
+    // Kalibrierungsrahmen (1mm innerhalb der Begrenzung)
+    if (document.getElementById('showCalibrationBorder').checked) {
+        const border = document.createElement('div');
+        border.style.position = 'absolute';
+        border.style.boxSizing = 'border-box';
+        border.style.pointerEvents = 'none';
+        border.style.zIndex = '500';
+        
+        // Der Rahmen soll 1mm kleiner sein als das Etikett (0.5mm Rand rundherum)
+        // Linienstärke 1mm
+        const bW = (fw - 1) * PX_PER_MM;
+        const bH = (fh - 1) * PX_PER_MM;
+        const bL = 0.5 * PX_PER_MM;
+        const bT = 0.5 * PX_PER_MM;
+        const bThick = 1 * PX_PER_MM;
+
+        border.style.left = bL + 'px';
+        border.style.top = bT + 'px';
+        border.style.width = bW + 'px';
+        border.style.height = bH + 'px';
+        border.style.border = `${bThick}px solid rgba(239, 68, 68, 0.6)`; // Rötlich und halbtransparent
+        
+        canv.appendChild(border);
+    }
+
     labelObjects.forEach((obj, idx) => {
         const div = document.createElement('div');
         div.className = 'designer-object ' + (selectedIdx === idx ? 'selected' : '');
@@ -416,7 +483,18 @@ function renderObjects() {
         div.appendChild(ctrl);
         const inner = document.createElement('div');
         inner.style.pointerEvents = 'none'; inner.style.width='100%'; inner.style.height='100%'; inner.style.display='flex'; inner.style.alignItems='center'; inner.style.justifyContent='center';
-        if(obj.type==='text') { inner.innerText = obj.properties.content||'Text'; inner.style.fontSize = (obj.properties.font_size||10)+'pt'; }
+        
+        if(obj.type==='text') { 
+            inner.innerText = obj.properties.content||'Text'; 
+            inner.style.fontSize = (obj.properties.font_size||10)+'pt';
+            if(obj.properties.bold) inner.style.fontWeight = 'bold';
+            if(obj.properties.italic) inner.style.fontStyle = 'italic';
+            if(obj.properties.vertical) {
+                inner.style.writingMode = 'vertical-rl';
+                inner.style.textOrientation = 'upright';
+                inner.style.letterSpacing = '-2px';
+            }
+        }
         else { 
             const c = document.createElement('canvas'); 
             try { 
@@ -428,7 +506,7 @@ function renderObjects() {
                     bcid: bType, 
                     text: obj.properties.content||'123', 
                     scale: 2,
-                    includetext: !isQR
+                    includetext: isQR ? false : (obj.properties.show_htr !== false)
                 };
                 if(!isQR) opts.height = 10;
                 
@@ -467,10 +545,21 @@ function editObject(idx) {
     document.getElementById('objContent').value = o.properties.content;
     document.getElementById('fontSizeGroup').style.display = o.type==='text'?'block':'none';
     document.getElementById('barcodeTypeGroup').style.display = o.type==='barcode'?'block':'none';
+    document.getElementById('textOptionsGroup').style.display = o.type==='text'?'block':'none';
+    document.getElementById('barcodeOptionsGroup').style.display = o.type==='barcode'?'block':'none';
+    
     document.getElementById('objWidth').value = o.width_mm;
     document.getElementById('objHeight').value = o.height_mm;
-    if(o.type==='text') document.getElementById('objFontSize').value = o.properties.font_size||10;
-    else document.getElementById('objBarcodeType').value = o.properties.barcode_type||'code128';
+    
+    if(o.type==='text') {
+        document.getElementById('objFontSize').value = o.properties.font_size||10;
+        document.getElementById('objBold').checked = !!o.properties.bold;
+        document.getElementById('objItalic').checked = !!o.properties.italic;
+        document.getElementById('objVertical').checked = !!o.properties.vertical;
+    } else {
+        document.getElementById('objBarcodeType').value = o.properties.barcode_type||'code128';
+        document.getElementById('objShowHTR').checked = o.properties.show_htr !== false;
+    }
     new bootstrap.Modal(document.getElementById('objectModal')).show();
 }
 function applyObjectProperties() {
@@ -478,8 +567,16 @@ function applyObjectProperties() {
     o.properties.content = document.getElementById('objContent').value;
     o.width_mm = parseFloat(document.getElementById('objWidth').value) || o.width_mm;
     o.height_mm = parseFloat(document.getElementById('objHeight').value) || o.height_mm;
-    if(o.type==='text') o.properties.font_size = document.getElementById('objFontSize').value;
-    else o.properties.barcode_type = document.getElementById('objBarcodeType').value;
+    
+    if(o.type==='text') {
+        o.properties.font_size = document.getElementById('objFontSize').value;
+        o.properties.bold = document.getElementById('objBold').checked;
+        o.properties.italic = document.getElementById('objItalic').checked;
+        o.properties.vertical = document.getElementById('objVertical').checked;
+    } else {
+        o.properties.barcode_type = document.getElementById('objBarcodeType').value;
+        o.properties.show_htr = document.getElementById('objShowHTR').checked;
+    }
     bootstrap.Modal.getInstance(document.getElementById('objectModal')).hide();
     renderObjects();
 }
@@ -488,7 +585,8 @@ function saveDesigner(silent = false) {
     return fetch('api_save_objects.php', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.success && !silent) alert('Design erfolgreich gespeichert!'); });
 }
 function saveDesignerAndPrint() {
-    saveDesigner(true).then(() => { window.location.href = 'print_labels.php?id=<?= $projectId ?>'; });
+    const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
+    saveDesigner(true).then(() => { window.location.href = 'print_labels.php?id=<?= $projectId ?>&cal=' + cal; });
 }
 
 function toggleAllRecords(checked) {
@@ -503,7 +601,10 @@ function toggleAllRecords(checked) {
 }
 
 function saveFormat() { fetch('api_update_format.php', {method:'POST', body:new FormData(document.getElementById('formatForm'))}).then(()=>location.reload()); }
-function openPreview() { saveDesigner(true).then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1`, '_blank')); }
+function openPreview() { 
+    const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
+    saveDesigner(true).then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1&cal=` + cal, '_blank')); 
+}
 function applyTemplate(s) { 
     if(!s.value) return; const t=JSON.parse(s.value); const f=document.getElementById('formatForm');
     const pId = <?= $projectId ?>;
