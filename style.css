@@ -1,3 +1,4 @@
+/* Barcode-Designer CSS v2.2.1-STABLE */
 :root {
     --bg-dark: #0f172a;
     --bg-card: rgba(30, 41, 59, 0.7);
@@ -148,4 +149,27 @@ input.form-control:focus {
 }
 ::-webkit-scrollbar-thumb:hover {
     background: #475569;
+}
+
+/* Designer Resizer */
+.resizer {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: white;
+    border: 1px solid var(--accent);
+    z-index: 1001;
+    display: none;
+    border-radius: 2px;
+}
+.designer-object.selected .resizer {
+    display: block;
+}
+.resizer.tl { top: -6px; left: -6px; cursor: nwse-resize; }
+.resizer.tr { top: -6px; right: -6px; cursor: nesw-resize; }
+.resizer.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.resizer.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.designer-object.selected {
+    box-shadow: 0 0 0 2px var(--accent);
 }

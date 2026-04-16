@@ -32,19 +32,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         
         $stmt->execute([
-            (float)($_POST["width_mm_$pId"] ?? 0),
-            (float)($_POST["height_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["width_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["height_mm_$pId"] ?? 0),
             (int)($_POST["cols_$pId"] ?? 1),
             (int)($_POST["rows_$pId"] ?? 1),
-            (float)($_POST["margin_top_mm_$pId"] ?? 0),
-            (float)($_POST["margin_bottom_mm_$pId"] ?? 0),
-            (float)($_POST["margin_left_mm_$pId"] ?? 0),
-            (float)($_POST["margin_right_mm_$pId"] ?? 0),
-            (float)($_POST["col_gap_mm_$pId"] ?? 0),
-            (float)($_POST["row_gap_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["margin_top_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["margin_bottom_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["margin_left_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["margin_right_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["col_gap_mm_$pId"] ?? 0),
+            (float)str_replace(',', '.', $_POST["row_gap_mm_$pId"] ?? 0),
             ($_POST["template_id_$pId"] ? (int)$_POST["template_id_$pId"] : null),
             (isset($_POST["show_calibration_border_$pId"]) ? 1 : 0),
-            (float)($_POST["print_scale_$pId"] ?? 100.0),
+            (float)str_replace(',', '.', $_POST["print_scale_$pId"] ?? 100.0),
             $pId
         ]);
 

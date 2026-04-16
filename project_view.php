@@ -235,7 +235,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.2.0-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.2.1-STABLE</div>
                         </div>
                     </div>
                 </div>
@@ -310,8 +310,8 @@ const formatH = <?= (float)$format['height_mm'] ?>;
 
 function updateDesignerZoom() {
     const pId = <?= $projectId ?>;
-    const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value) || 10;
-    const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value) || 10;
+    const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value.replace(',', '.')) || 10;
+    const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value.replace(',', '.')) || 10;
     const canv = document.getElementById('designer-canvas');
     const rx = document.getElementById('ruler-x');
     const ry = document.getElementById('ruler-y');
@@ -518,6 +518,58 @@ function renderObjects() {
             inner.appendChild(c); 
         }
         div.appendChild(inner);
+
+        // Resizer immer hinzufügen (Sichtbarkeit via CSS .selected)
+        ['tl','tr','bl','br'].forEach(pos => {
+            const resizer = document.createElement('div');
+            resizer.className = 'resizer ' + pos;
+            resizer.onmousedown = (e) => {
+                e.stopPropagation();
+                const sX=e.clientX, sY=e.clientY;
+                const iW=obj.width_mm, iH=obj.height_mm, iX=obj.x_mm, iY=obj.y_mm;
+                const isQR = obj.properties.barcode_type === 'qr';
+                
+                const move = (ev) => {
+                    const dx = (ev.clientX - sX) / (PX_PER_MM * zoomLevel);
+                    const dy = (ev.clientY - sY) / (PX_PER_MM * zoomLevel);
+                    
+                    let nw = iW, nh = iH, nx = iX, ny = iY;
+                    
+                    if(pos.includes('r')) nw = iW + dx;
+                    if(pos.includes('l')) { nw = iW - dx; nx = iX + dx; }
+                    if(pos.includes('b')) nh = iH + dy;
+                    if(pos.includes('t')) { nh = iH - dy; ny = iY + dy; }
+                    
+                    if(nw < 3) { if(pos.includes('l')) nx = iX + (iW - 3); nw = 3; }
+                    if(nh < 3) { if(pos.includes('t')) ny = iY + (iH - 3); nh = 3; }
+
+                    if(isQR) {
+                        const newSize = Math.max(nw, nh);
+                        if(pos === 'br') { nw = newSize; nh = newSize; }
+                        else if(pos === 'tl') { nx = iX + (iW - newSize); ny = iY + (iH - newSize); nw = newSize; nh = newSize; }
+                        else if(pos === 'tr') { ny = iY + (iH - newSize); nw = newSize; nh = newSize; }
+                        else if(pos === 'bl') { nx = iX + (iW - newSize); nw = newSize; nh = newSize; }
+                    }
+                    
+                    obj.width_mm = nw; obj.height_mm = nh;
+                    obj.x_mm = nx; obj.y_mm = ny;
+                    
+                    div.style.width = (nw * PX_PER_MM) + 'px';
+                    div.style.height = (nh * PX_PER_MM) + 'px';
+                    div.style.left = (nx * PX_PER_MM) + 'px';
+                    div.style.top = (ny * PX_PER_MM) + 'px';
+                };
+                const up = () => { 
+                    document.removeEventListener('mousemove', move); 
+                    document.removeEventListener('mouseup', up);
+                    renderObjects(); 
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            };
+            div.appendChild(resizer);
+        });
+
         div.onmousedown = (e) => {
             if(e.target.classList.contains('obj-btn')) return;
             selectedIdx = idx;
@@ -565,8 +617,8 @@ function editObject(idx) {
 function applyObjectProperties() {
     const o = labelObjects[selectedIdx];
     o.properties.content = document.getElementById('objContent').value;
-    o.width_mm = parseFloat(document.getElementById('objWidth').value) || o.width_mm;
-    o.height_mm = parseFloat(document.getElementById('objHeight').value) || o.height_mm;
+    o.width_mm = parseFloat(document.getElementById('objWidth').value.replace(',', '.')) || o.width_mm;
+    o.height_mm = parseFloat(document.getElementById('objHeight').value.replace(',', '.')) || o.height_mm;
     
     if(o.type==='text') {
         o.properties.font_size = document.getElementById('objFontSize').value;

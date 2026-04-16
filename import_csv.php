@@ -7,12 +7,33 @@ require_once 'config.php';
  * Verarbeitet den Upload einer CSV-Datei und speichert die Daten in die bestehende Struktur.
  */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_FILES['csv_file'])) {
+        die("Fehler: Formular-Daten unvollständig. Möglicherweise ist die Datei größer als das erlaubte Limit (post_max_size / upload_max_filesize).");
+    }
+
+    $uploadError = $_FILES['csv_file']['error'];
+    if ($uploadError !== UPLOAD_ERR_OK) {
+        $maxSize = ini_get('upload_max_filesize');
+        switch ($uploadError) {
+            case UPLOAD_ERR_INI_SIZE:
+                die("Fehler: Die Datei ist zu groß. Das Server-Limit liegt bei $maxSize.");
+            case UPLOAD_ERR_FORM_SIZE:
+                die("Fehler: Die Datei überschreitet das MAX_FILE_SIZE Limit im Formular.");
+            case UPLOAD_ERR_PARTIAL:
+                die("Fehler: Der Upload wurde nur teilweise übertragen (Verbindungsabbruch?).");
+            case UPLOAD_ERR_NO_FILE:
+                die("Fehler: Es wurde keine Datei für den Upload ausgewählt.");
+            default:
+                die("Fehler beim Upload (Fehlercode: $uploadError).");
+        }
+    }
+
     $projectName = $_POST['project_name'] ?? 'Unbenanntes Projekt';
     $file = $_FILES['csv_file']['tmp_name'];
 
     if (!$file || !is_uploaded_file($file)) {
-        die("Fehler: Keine Datei hochgeladen.");
+        die("Fehler: Die hochgeladene Datei konnte nicht verarbeitet werden.");
     }
 
     try {
