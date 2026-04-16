@@ -2,22 +2,45 @@
 session_start();
 require_once 'config.php';
 
+// Standort abrufen (falls gewählt)
+$locationId = $_GET['location_id'] ?? null;
+$location = null;
+
+if ($locationId) {
+    $stmt = $pdo->prepare("SELECT * FROM locations WHERE id = ?");
+    $stmt->execute([$locationId]);
+    $location = $stmt->fetch();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_project_id'])) {
     $delId = (int)$_POST['delete_project_id'];
-    // Löscht dank ON DELETE CASCADE auch formats, objects und project_fields!
     $pdo->prepare("DELETE FROM projects WHERE id = ?")->execute([$delId]);
     
-    // RAM-Leichen löschen
     unset($_SESSION["csv_raw_13k_project_{$delId}"]);
     unset($_SESSION["csv_selected_{$delId}"]);
     
-    header("Location: index.php");
+    $redirectUrl = $locationId ? "index.php?location_id=$locationId" : "index.php";
+    header("Location: $redirectUrl");
     exit;
 }
 
-// Alle Projekte abrufen
-$stmt = $pdo->query("SELECT * FROM projects ORDER BY modified_at DESC");
-$projects = $stmt->fetchAll();
+// Daten abrufen
+if ($locationId) {
+    // Projekte für diesen Standort
+    $stmt = $pdo->prepare("SELECT * FROM projects WHERE location_id = ? ORDER BY modified_at DESC");
+    $stmt->execute([$locationId]);
+    $projects = $stmt->fetchAll();
+} else {
+    // Alle Standorte auflisten
+    $stmt = $pdo->query("
+        SELECT l.id, l.name, l.logo_data, COUNT(p.id) as project_count 
+        FROM locations l 
+        LEFT JOIN projects p ON l.id = p.location_id 
+        GROUP BY l.id 
+        ORDER BY l.name ASC
+    ");
+    $locationsList = $stmt->fetchAll();
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -41,72 +64,125 @@ $projects = $stmt->fetchAll();
             </div>
             <span>BARCODE SYSTEM</span>
         </a>
-        <div class="ms-auto">
-            <a href="handbuch.html" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info"><i class="bi bi-question-circle me-1"></i> Hilfe / Handbuch</a>
+        <div class="ms-auto d-flex align-items-center">
+            <a href="admin/index.php" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm text-secondary me-2"><i class="bi bi-gear me-1"></i> Admin</a>
+            <a href="handbuch.html" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
         </div>
     </div>
 </nav>
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Meine Projekte</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">Neues Projekt / CSV Import</button>
-    </div>
-
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        <?php if (empty($projects)): ?>
-            <div class="col-12">
-                <div class="alert alert-info">Keine Projekte gefunden. Importieren Sie eine CSV-Datei, um zu starten.</div>
+<div class="container pb-5">
+    <?php if (!$locationId): ?>
+        <!-- STANDORT AUSWAHL -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Standort wählen</h2>
+                <p class="text-secondary small">Bitte wählen Sie einen Standort aus, um die zugehörigen Projekte zu sehen.</p>
             </div>
-        <?php else: ?>
-            <?php foreach ($projects as $project): ?>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <?php foreach ($locationsList as $loc): ?>
                 <div class="col">
-                    <div class="card h-100 project-card" onclick="location.href='project_view.php?id=<?= $project['id'] ?>'">
-                        <div class="card-body position-relative">
-                            <h5 class="card-title pe-4"><?php echo htmlspecialchars($project['name']); ?></h5>
-                            <p class="card-text text-muted small"><?php echo htmlspecialchars($project['description'] ?? ''); ?></p>
-                            
-                            <!-- Löschen-Button -->
-                            <form method="POST" action="index.php" class="position-absolute" style="right: 15px; top: 15px;" onsubmit="event.stopPropagation();">
-                                <input type="hidden" name="delete_project_id" value="<?= $project['id'] ?>">
-                                <button type="submit" class="btn btn-outline-danger btn-sm border-0 px-2" onclick="return confirm('Möchtest du das Projekt \'<?= htmlspecialchars($project['name']) ?>\' inklusive aller Layouts und Designs wirklich endgültig löschen?')" title="Projekt unwiderruflich löschen">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
-                            </form>
-                        </div>
-                        <div class="card-footer bg-transparent border-top-0">
-                            <small class="text-muted">Geändert: <?php echo date('d.m.Y H:i', strtotime($project['modified_at'])); ?></small>
+                    <div class="card h-100 project-card" onclick="location.href='index.php?location_id=<?= $loc['id'] ?>'">
+                        <div class="card-body d-flex align-items-center p-4">
+                            <div class="location-icon-wrapper me-4 bg-primary bg-opacity-10 text-primary rounded-4 d-flex align-items-center justify-content-center overflow-hidden" style="width: 60px; height: 60px; min-width: 60px;">
+                                <?php if ($loc['logo_data']): ?>
+                                    <img src="<?= $loc['logo_data'] ?>" alt="Logo" class="w-100 h-100 p-2" style="object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+                                <?php else: ?>
+                                    <i class="bi bi-geo-alt-fill" style="font-size: 1.8rem;"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1"><?php echo htmlspecialchars($loc['name']); ?></h5>
+                                <div class="badge rounded-pill bg-dark border border-secondary text-secondary small fw-normal px-3">
+                                    <?= $loc['project_count'] ?> Projekte
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
+        </div>
+
+    <?php else: ?>
+        <!-- PROJEKT ÜBERSICHT FÜR STANDORT -->
+        <div class="d-flex align-items-center mb-4">
+            <a href="index.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-3 border-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Alle Standorte
+            </a>
+            <div class="ms-1">
+                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">Standort</div>
+                <h2 class="fw-bold m-0"><?= htmlspecialchars($location['name']) ?></h2>
+            </div>
+            <div class="ms-auto">
+                <button class="btn btn-primary shadow-sm px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+                    <i class="bi bi-plus-lg me-1"></i> Neues Projekt anlegen
+                </button>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <?php if (empty($projects)): ?>
+                <div class="col-12">
+                    <div class="card p-5 text-center bg-dark border-secondary bg-opacity-50 dashed-border">
+                        <i class="bi bi-folder2-open display-4 text-secondary mb-3 opacity-25"></i>
+                        <h5 class="text-secondary">Noch keine Projekte an diesem Standort</h5>
+                        <p class="small text-muted mb-4">Importieren Sie eine CSV-Datei, um das erste Projekt zu erstellen.</p>
+                        <button class="btn btn-outline-primary btn-sm rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#newProjectModal">Jetzt Importieren</button>
+                    </div>
+                </div>
+            <?php else: ?>
+                <?php foreach ($projects as $project): ?>
+                    <div class="col">
+                        <div class="card h-100 project-card" onclick="location.href='project_view.php?id=<?= $project['id'] ?>'">
+                            <div class="card-body position-relative p-4">
+                                <h5 class="card-title pe-4"><?php echo htmlspecialchars($project['name']); ?></h5>
+                                <p class="card-text text-muted small"><?php echo htmlspecialchars($project['description'] ?? ''); ?></p>
+                                
+                                <!-- Löschen-Button -->
+                                <form method="POST" action="index.php?location_id=<?= $locationId ?>" class="position-absolute" style="right: 15px; top: 15px;" onsubmit="event.stopPropagation();">
+                                    <input type="hidden" name="delete_project_id" value="<?= $project['id'] ?>">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm border-0 px-2" onclick="return confirm('Projekt wirklich löschen?')" title="Projekt löschen">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="card-footer bg-transparent border-top-0 px-4 pb-4">
+                                <small class="text-muted">Geändert: <?php echo date('d.m.Y H:i', strtotime($project['modified_at'])); ?></small>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 </div>
 
-<!-- Modal für neues Projekt (Platzhalter) -->
+<!-- Modal für neues Projekt -->
 <div class="modal fade" id="newProjectModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Neues Projekt erstellen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Neues Projekt erstellen</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="import_csv.php" method="post" enctype="multipart/form-data">
-                <div class="modal-body">
+                <input type="hidden" name="location_id" value="<?= $locationId ?>">
+                <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label for="projectName" class="form-label">Projektname</label>
-                        <input type="text" class="form-control" id="projectName" name="project_name" required>
+                        <label class="form-label text-secondary small">Projektname</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary" name="project_name" placeholder="z.B. Paletten-Etiketten" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="csvFile" class="form-label">CSV-Datei auswählen</label>
-                        <input class="form-control" type="file" id="csvFile" name="csv_file" accept=".csv" required>
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small">CSV-Datei auswählen</label>
+                        <input class="form-control bg-dark text-light border-secondary" type="file" name="csv_file" accept=".csv" required>
+                        <div class="form-text mt-2" style="font-size: 0.75rem; color: #94a3b8 !important;">Kodierung: UTF-8 oder Excel-CSV (Windows-1252)</div>
                     </div>
-                    <div class="form-text">Die CSV sollte Spalten wie MatNr, Bezeichnung und EAN enthalten.</div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                    <button type="submit" class="btn btn-primary">Hochladen & Importieren</button>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-link text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Hochladen & Importieren</button>
                 </div>
             </form>
         </div>

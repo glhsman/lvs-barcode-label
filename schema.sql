@@ -6,14 +6,26 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- ─── Standorte ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS locations (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    logo_data   LONGTEXT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ─── Projekte ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS projects (
     id          INT AUTO_INCREMENT PRIMARY KEY,
+    location_id INT NOT NULL,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_name (name)
+    FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE CASCADE,
+    INDEX idx_name (name),
+    INDEX idx_location (location_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── Tabellenfelder (Spalten) pro Projekt ─────────────────────────────────────

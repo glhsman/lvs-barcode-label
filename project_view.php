@@ -35,7 +35,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
         $line = trim($line);
         if (!$line) continue;
         $row = str_getcsv($line, $delimiter, '"', '');
-        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? true;
+        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? false;
         
         $values = [];
         foreach ($fields as $colIdx => $field) {
@@ -235,7 +235,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.2.1-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.5.0-STABLE</div>
                         </div>
                     </div>
                 </div>

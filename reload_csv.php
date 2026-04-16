@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
 
         // 4. In die Session laden
         $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
-        $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig alle selektiert
+        $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig nichts selektiert
         
         $pdo->commit();
         

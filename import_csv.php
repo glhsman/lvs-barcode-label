@@ -40,8 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // 1. Projekt erstellen
-        $stmt = $pdo->prepare("INSERT INTO projects (name, description, created_at, modified_at) VALUES (?, 'Importiert aus Web-Interface', NOW(), NOW())");
-        $stmt->execute([$projectName]);
+        $locationId = (int)($_POST['location_id'] ?? 1);
+        $stmt = $pdo->prepare("INSERT INTO projects (location_id, name, description, created_at, modified_at) VALUES (?, ?, 'Importiert aus Web-Interface', NOW(), NOW())");
+        $stmt->execute([$locationId, $projectName]);
         $projectId = $pdo->lastInsertId();
 
         // 2. CSV einlesen und Kodierung behandeln
@@ -78,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // 4. Datensätze in die Session laden (Flüchtig / Nirvana nach Session-Ende)
         // Die Datenbank bleibt sauber!
         $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
-        $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig alle selektiert
+        $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig nichts selektiert
         $recordCount = count($lines) - 1; // Header abziehen
         
         // 5. Standard-Etikettenformat anlegen
@@ -87,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$projectId]);
 
         $pdo->commit();
-        header("Location: index.php?success=1&count=" . $recordCount);
+        header("Location: index.php?location_id=" . $locationId . "&success=1&count=" . $recordCount);
         exit;
 
     } catch (Exception $e) {

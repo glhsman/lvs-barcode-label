@@ -1,0 +1,7 @@
+# Zugriff auf .ini-Dateien über HTTP komplett verbieten
+<FilesMatch "\.ini$">
+    Require all denied
+</FilesMatch>
+
+# Directory Listing deaktivieren (verhindert "Browse-Modus")
+Options -Indexes
