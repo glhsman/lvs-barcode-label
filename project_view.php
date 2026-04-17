@@ -51,9 +51,9 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
 <head>
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($project['name']) ?> - Details</title>
-    <link rel="icon" type="image/x-icon" href="barcode_green.ico">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="style.css?v=<?= time() ?>">
@@ -217,9 +217,16 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                         <div class="card-header p-3 d-flex justify-content-between align-items-center border-bottom border-secondary">
                             <span class="fw-bold small" style="letter-spacing: 1px;"><i class="bi bi-pencil-square me-2 text-primary"></i>VISUAL EDITOR</span>
                             <div>
-                                <div class="btn-group btn-group-sm me-3 border border-secondary rounded overflow-hidden">
+                                <div class="btn-group btn-group-sm me-2 border border-secondary rounded overflow-hidden">
                                     <button class="btn btn-dark" onclick="addObject('text')"><i class="bi bi-plus me-1"></i> Text</button>
                                     <button class="btn btn-dark" onclick="addObject('barcode')"><i class="bi bi-plus me-1"></i> Barcode</button>
+                                </div>
+                                <div class="btn-group btn-group-sm me-3 border border-secondary rounded overflow-hidden">
+                                    <button class="btn btn-dark" onclick="alignObjects('left')" title="Links ausrichten"><i class="bi bi-align-start"></i></button>
+                                    <button class="btn btn-dark" onclick="alignObjects('width')" title="Einheilt. Breite"><i class="bi bi-arrows-expand" style="transform: rotate(90deg); display: inline-block;"></i></button>
+                                    <button class="btn btn-dark" onclick="alignObjects('spacing_dist')" title="Vert. Gleichzug"><i class="bi bi-distribute-vertical"></i></button>
+                                    <button class="btn btn-dark" onclick="adjustSpacing(1)" title="Abstand +"><i class="bi bi-plus"></i></button>
+                                    <button class="btn btn-dark" onclick="adjustSpacing(-1)" title="Abstand -"><i class="bi bi-dash"></i></button>
                                 </div>
                                 <button class="btn btn-sm btn-outline-info px-3 me-2 border-info" onclick="openPreview()"><i class="bi bi-eye me-1"></i> Vorschau</button>
                                 <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="saveDesigner()"><i class="bi bi-cloud-check me-1"></i> Design speichern</button>
@@ -235,7 +242,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.5.0-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.6.0-STABLE</div>
                         </div>
                     </div>
                 </div>
@@ -264,7 +271,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             </div>
             <div class="row g-2">
                 <div id="fontSizeGroup" class="col-6"><label class="form-label-sm">Schriftgröße (pt)</label><input type="number" class="form-control bg-dark text-light border-secondary" id="objFontSize"></div>
-                <div id="barcodeTypeGroup" class="col-6"><label class="form-label-sm">Barcode Typ</label><select class="form-select bg-dark text-light border-secondary" id="objBarcodeType"><option value="code128">Code 128</option><option value="ean13">EAN 13</option><option value="qr">QR Code</option></select></div>
+                <div id="barcodeTypeGroup" class="col-6"><label class="form-label-sm">Barcode Typ</label><select class="form-select bg-dark text-light border-secondary" id="objBarcodeType"><option value="code128">Code 128</option><option value="ean13">EAN 13</option><option value="ean8">EAN 8</option><option value="qr">QR Code</option></select></div>
             </div>
             <div class="row g-2 mt-2">
                 <div class="col-6"><label class="form-label-sm">Breite der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objWidth"></div>
@@ -284,6 +291,17 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="objVertical">
                         <label class="form-check-label small" for="objVertical">Senkrecht</label>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="form-label-sm mb-1">Textausrichtung (Horizontal)</label>
+                    <div class="btn-group btn-group-sm w-100 border border-secondary rounded overflow-hidden">
+                        <input type="radio" class="btn-check" name="objTextAlign" id="alignLeft" value="left">
+                        <label class="btn btn-outline-secondary border-0" for="alignLeft"><i class="bi bi-justify-left"></i></label>
+                        <input type="radio" class="btn-check" name="objTextAlign" id="alignCenter" value="center" checked>
+                        <label class="btn btn-outline-secondary border-0" for="alignCenter"><i class="bi bi-justify-center"></i></label>
+                        <input type="radio" class="btn-check" name="objTextAlign" id="alignRight" value="right">
+                        <label class="btn btn-outline-secondary border-0" for="alignRight"><i class="bi bi-justify-right"></i></label>
                     </div>
                 </div>
             </div>
@@ -375,7 +393,7 @@ window.addEventListener('DOMContentLoaded', () => {
 let labelObjects = <?= json_encode($labelObjects) ?>;
 labelObjects = labelObjects.map(o => { if(typeof o.properties==='string') try { o.properties=JSON.parse(o.properties); } catch(e){ o.properties={}; } return o; });
 const PX_PER_MM = 3.78;
-let selectedIdx = null;
+let selectedIndices = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash;
@@ -474,7 +492,7 @@ function renderObjects() {
 
     labelObjects.forEach((obj, idx) => {
         const div = document.createElement('div');
-        div.className = 'designer-object ' + (selectedIdx === idx ? 'selected' : '');
+        div.className = 'designer-object ' + (selectedIndices.includes(idx) ? 'selected' : '');
         div.style.cssText = `left:${obj.x_mm*PX_PER_MM}px; top:${obj.y_mm*PX_PER_MM}px; width:${obj.width_mm*PX_PER_MM}px; height:${obj.height_mm*PX_PER_MM}px;`;
         const ctrl = document.createElement('div');
         ctrl.className = 'obj-controls no-print';
@@ -494,17 +512,39 @@ function renderObjects() {
                 inner.style.textOrientation = 'upright';
                 inner.style.letterSpacing = '-2px';
             }
+            const ta = obj.properties.text_align || 'center';
+            if (ta === 'left') inner.style.justifyContent = 'flex-start';
+            if (ta === 'right') inner.style.justifyContent = 'flex-end';
         }
         else { 
             const c = document.createElement('canvas'); 
+            const bType = obj.properties.barcode_type||'code128';
+            const content = obj.properties.content||'123';
+            
+            // EAN Validierung (nur falls kein Platzhalter enthalten ist)
+            let hasError = false;
+            let errorMsg = "";
+            if (bType === 'ean8' && !/^\d{8}$/.test(content) && content.indexOf('[~') === -1) {
+                hasError = true; errorMsg = "EAN8 ERROR\n(8 Ziffern!)";
+            } else if (bType === 'ean13' && !/^\d{12,13}$/.test(content) && content.indexOf('[~') === -1) {
+                hasError = true; errorMsg = "EAN13 ERROR\n(12-13 Ziffern!)";
+            }
+
+            if (hasError) {
+                const warn = document.createElement('div');
+                warn.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(239, 68, 68, 0.6); display:flex; align-items:center; justify-content:center; text-align:center; color:white; font-size:8px; z-index:10; pointer-events:none;";
+                warn.innerText = errorMsg;
+                inner.appendChild(warn);
+            }
+
             try { 
-                let bType = obj.properties.barcode_type||'code128';
-                let isQR = bType === 'qr';
-                if(isQR) bType = 'qrcode';
+                let bTypeInternal = bType;
+                let isQR = bTypeInternal === 'qr';
+                if(isQR) bTypeInternal = 'qrcode';
                 
                 const opts = {
-                    bcid: bType, 
-                    text: obj.properties.content||'123', 
+                    bcid: bTypeInternal, 
+                    text: content, 
                     scale: 2,
                     includetext: isQR ? false : (obj.properties.show_htr !== false)
                 };
@@ -572,15 +612,43 @@ function renderObjects() {
 
         div.onmousedown = (e) => {
             if(e.target.classList.contains('obj-btn')) return;
-            selectedIdx = idx;
-            document.querySelectorAll('.designer-object').forEach(el => el.classList.remove('selected'));
-            div.classList.add('selected');
-            const sX=e.clientX, sY=e.clientY, iX=obj.x_mm*PX_PER_MM, iY=obj.y_mm*PX_PER_MM;
+            
+            if (e.ctrlKey) {
+                if (selectedIndices.includes(idx)) {
+                    selectedIndices = selectedIndices.filter(i => i !== idx);
+                } else {
+                    selectedIndices.push(idx);
+                }
+            } else {
+                if (!selectedIndices.includes(idx)) {
+                    selectedIndices = [idx];
+                }
+            }
+            
+            document.querySelectorAll('.designer-object').forEach((el, i) => {
+                if (selectedIndices.includes(i)) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
+
+            const sX=e.clientX, sY=e.clientY;
+            const initialPos = selectedIndices.map(i => ({idx: i, x: labelObjects[i].x_mm * PX_PER_MM, y: labelObjects[i].y_mm * PX_PER_MM}));
+
             const move = (ev) => { 
-                obj.x_mm = (iX+(ev.clientX-sX)/zoomLevel)/PX_PER_MM; 
-                obj.y_mm = (iY+(ev.clientY-sY)/zoomLevel)/PX_PER_MM; 
-                div.style.left=obj.x_mm*PX_PER_MM+'px'; 
-                div.style.top=obj.y_mm*PX_PER_MM+'px'; 
+                const dx = (ev.clientX - sX) / zoomLevel;
+                const dy = (ev.clientY - sY) / zoomLevel;
+                
+                initialPos.forEach(p => {
+                    const obj = labelObjects[p.idx];
+                    obj.x_mm = (p.x + dx) / PX_PER_MM;
+                    obj.y_mm = (p.y + dy) / PX_PER_MM;
+                    
+                    // Live-Update der DIVs (optional, aber performanter für Feedback)
+                    const el = document.querySelectorAll('.designer-object')[p.idx];
+                    if (el) {
+                        el.style.left = obj.x_mm * PX_PER_MM + 'px';
+                        el.style.top = obj.y_mm * PX_PER_MM + 'px';
+                    }
+                });
             };
             const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
             document.addEventListener('mousemove', move);
@@ -590,10 +658,11 @@ function renderObjects() {
         canv.appendChild(div);
     });
 }
-function addObject(t) { labelObjects.push({type:t, x_mm:5, y_mm:5, width_mm:40, height_mm:15, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128'}}); renderObjects(); }
-function deleteObject(idx) { labelObjects.splice(idx, 1); selectedIdx=null; renderObjects(); }
+function addObject(t) { labelObjects.push({type:t, x_mm:5, y_mm:5, width_mm:40, height_mm:15, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}}); renderObjects(); }
+function deleteObject(idx) { labelObjects.splice(idx, 1); selectedIndices = selectedIndices.filter(i => i !== idx).map(i => i > idx ? i - 1 : i); renderObjects(); }
 function editObject(idx) {
-    selectedIdx = idx; const o = labelObjects[idx];
+    if (!selectedIndices.includes(idx)) selectedIndices = [idx];
+    const o = labelObjects[idx];
     document.getElementById('objContent').value = o.properties.content;
     document.getElementById('fontSizeGroup').style.display = o.type==='text'?'block':'none';
     document.getElementById('barcodeTypeGroup').style.display = o.type==='barcode'?'block':'none';
@@ -608,6 +677,9 @@ function editObject(idx) {
         document.getElementById('objBold').checked = !!o.properties.bold;
         document.getElementById('objItalic').checked = !!o.properties.italic;
         document.getElementById('objVertical').checked = !!o.properties.vertical;
+        const ta = o.properties.text_align || 'center';
+        const rb = document.querySelector(`input[name="objTextAlign"][value="${ta}"]`);
+        if (rb) rb.checked = true;
     } else {
         document.getElementById('objBarcodeType').value = o.properties.barcode_type||'code128';
         document.getElementById('objShowHTR').checked = o.properties.show_htr !== false;
@@ -615,7 +687,10 @@ function editObject(idx) {
     new bootstrap.Modal(document.getElementById('objectModal')).show();
 }
 function applyObjectProperties() {
-    const o = labelObjects[selectedIdx];
+    // Falls mehrere gewählt sind, aber nur eines editiert wurde (Standardverhalten), nehmen wir das erste aus der Auswahl
+    const idx = selectedIndices[0];
+    if (idx === undefined) return;
+    const o = labelObjects[idx];
     o.properties.content = document.getElementById('objContent').value;
     o.width_mm = parseFloat(document.getElementById('objWidth').value.replace(',', '.')) || o.width_mm;
     o.height_mm = parseFloat(document.getElementById('objHeight').value.replace(',', '.')) || o.height_mm;
@@ -625,6 +700,7 @@ function applyObjectProperties() {
         o.properties.bold = document.getElementById('objBold').checked;
         o.properties.italic = document.getElementById('objItalic').checked;
         o.properties.vertical = document.getElementById('objVertical').checked;
+        o.properties.text_align = document.querySelector('input[name="objTextAlign"]:checked').value;
     } else {
         o.properties.barcode_type = document.getElementById('objBarcodeType').value;
         o.properties.show_htr = document.getElementById('objShowHTR').checked;
@@ -693,10 +769,49 @@ document.getElementById('objWidth').addEventListener('input', function() {
     }
 });
 document.getElementById('objHeight').addEventListener('input', function() {
-    if (labelObjects[selectedIdx] && labelObjects[selectedIdx].type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
+    const idx = selectedIndices[0];
+    if (idx !== undefined && labelObjects[idx].type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
         document.getElementById('objWidth').value = this.value;
     }
 });
+
+function alignObjects(type) {
+    if (selectedIndices.length < 2) return;
+    const targets = selectedIndices.map(idx => labelObjects[idx]);
+    
+    if (type === 'left') {
+        const minX = Math.min(...targets.map(o => o.x_mm));
+        targets.forEach(o => o.x_mm = minX);
+    } else if (type === 'width') {
+        const maxWidth = Math.max(...targets.map(o => o.width_mm));
+        targets.forEach(o => o.width_mm = maxWidth);
+    } else if (type === 'spacing_dist') {
+        targets.sort((a, b) => a.y_mm - b.y_mm);
+        const first = targets[0];
+        const last = targets[targets.length - 1];
+        const totalHeightOfMiddle = targets.slice(0, -1).reduce((s, o) => s + o.height_mm, 0);
+        const gap = (last.y_mm - first.y_mm - totalHeightOfMiddle) / (targets.length - 1);
+        
+        let currentY = first.y_mm;
+        for (let i = 1; i < targets.length - 1; i++) {
+            currentY += targets[i-1].height_mm + gap;
+            targets[i].y_mm = currentY;
+        }
+    }
+    renderObjects();
+}
+
+function adjustSpacing(dir) {
+    if (selectedIndices.length < 2) return;
+    const targets = selectedIndices.map(idx => labelObjects[idx]);
+    targets.sort((a, b) => a.y_mm - b.y_mm);
+    
+    const step = 2 * dir; // 2mm
+    for (let i = 1; i < targets.length; i++) {
+        targets[i].y_mm += i * step;
+    }
+    renderObjects();
+}
 </script>
 </body>
 </html>

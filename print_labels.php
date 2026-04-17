@@ -22,6 +22,11 @@ $stmt = $pdo->prepare("SELECT * FROM label_formats WHERE project_id = ?");
 $stmt->execute([$projectId]);
 $format = $stmt->fetch();
 
+// Objekte laden für EAN8 Validierung
+$stmt = $pdo->prepare("SELECT * FROM label_objects WHERE project_id = ?");
+$stmt->execute([$projectId]);
+$objects = $stmt->fetchAll();
+
 // Ausgewählte Datensätze laden (aus Session!)
 $selectedRecords = [];
 if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
@@ -51,6 +56,26 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
         }
     }
 }
+
+$ean8Errors = 0;
+foreach ($selectedRecords as $record) {
+    foreach ($objects as $obj) {
+        $p = $obj['properties'];
+        if (is_string($p)) $p = json_decode($p, true) ?: [];
+        $bType = $p['barcode_type'] ?? '';
+        if ($bType === 'ean8' || $bType === 'ean13') {
+             $txt = $p['content'] ?? '';
+             foreach ($record as $k => $v) {
+                 $txt = str_ireplace("[~$k~]", (string)$v, $txt);
+             }
+             $valid = ($bType === 'ean8') ? preg_match('/^\d{8}$/', $txt) : preg_match('/^\d{12,13}$/', $txt);
+             if (!$valid) {
+                 $ean8Errors++;
+                 break; // Ein Fehler pro Datensatz reicht
+             }
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -58,9 +83,9 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Druckvorschau - <?= htmlspecialchars($project['name']) ?></title>
-    <link rel="icon" type="image/x-icon" href="barcode_green.ico">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -126,6 +151,21 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     <div class="row align-items-start">
         <div class="col-lg-6">
             <h2 class="mb-4">Druckkonfiguration</h2>
+            
+            <?php if ($ean8Errors > 0): ?>
+                <div class="alert alert-warning border-warning bg-warning bg-opacity-10 text-dark rounded-4 mb-4 shadow-sm">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi bi-exclamation-triangle-fill fs-2 text-warning"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1">Barcode Validierungs-Warnung</h5>
+                            <p class="mb-0 small"><strong><?= $ean8Errors ?></strong> der gewählten Datensätze enthalten Daten, die nicht den Anforderungen für EAN8 (8 Ziffern) oder EAN13 (12-13 Ziffern) entsprechen. Diese werden im Druck als Fehler markiert.</p>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <?php if ((int)$format['cols'] === 1 && (int)$format['rows'] === 1): ?>
                 <div class="card mb-4 border-info">
                     <div class="card-body d-flex align-items-center">

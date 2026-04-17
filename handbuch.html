@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Handbuch - Barcode & Etiketten-System</title>
-    <link rel="icon" type="image/x-icon" href="barcode_green.ico">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -285,7 +285,7 @@
                             <i class="bi bi-upc-scan text-white" style="font-size: 2.5rem;"></i>
                         </div>
                     </div>
-                    <div class="badge-version">Aktuelle Version v2.1.1</div>
+                    <div class="badge-version">Aktuelle Version v2.6.0</div>
                     <h1>Umfassendes Handbuch</h1>
                     <p class="text-muted fs-5">LVS Barcode- & Etikettensystem</p>
                 </header>
@@ -378,16 +378,36 @@
 
                     <h3>Barcode-Typen</h3>
                     <p class="small text-muted">Sie können zwischen drei Haupttypen wählen:</p>
-                    <div class="row g-2 mb-4">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="p-2 border border-secondary rounded text-center small"><strong>Code 128</strong><br>Standard-Code für Texte/Zahlen.</div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="p-2 border border-secondary rounded text-center small"><strong>EAN 13</strong><br>Für klassische europäische Artikelnummern.</div>
+                        <div class="col-md-3">
+                            <div class="p-2 border border-secondary rounded text-center small"><strong>EAN 8 / 13</strong><br>Europäische Artikelnummern (8/13 Ziffern).</div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="p-2 border border-secondary rounded text-center small"><strong>QR-Code</strong><br>Für große Datenmengen oder Weblinks.</div>
+                        <div class="col-md-3">
+                            <div class="p-2 border border-secondary rounded text-center small"><strong>QR-Code</strong><br>Große Datenmengen / Weblinks.</div>
                         </div>
+                    </div>
+
+                    <h3>Präzisions-Werkzeuge & Multi-Selektion</h3>
+                    <div class="feature-item">
+                        <div class="feature-icon text-primary"><i class="bi bi-cursor-fill"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Multi-Selektion</h6>
+                            <p class="small text-muted mb-0">Halte die <kbd class="keyboard-key">Strg</kbd>-Taste gedrückt, um mehrere Elemente auszuwählen. Diese können dann gemeinsam verschoben oder über die Toolbar ausgerichtet werden.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon text-info"><i class="bi bi-layout-three-columns"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Ausrichtungs-Toolbar</h6>
+                            <p class="small text-muted mb-0">Nutze die Icons im Kopfbereich zum linksbündigen Ausrichten, Angleichen der Breite oder zum gleichmäßigen vertikalen Verteilen von Elementen.</p>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h6 class="fw-bold text-danger"><i class="bi bi-shield-exclamation me-2"></i>EAN Validierung</h6>
+                        <p class="small mb-0">EAN8 und EAN13 Barcodes werden in Echtzeit geprüft. Enthalten diese nicht die benötigte Anzahl an Ziffern (8 bzw. 12-13), erscheint eine Warnmeldung im Designer und ein deutlich sichtbarer "ERROR" auf dem Ausdruck.</p>
                     </div>
 
                     <div class="info-box">
@@ -546,7 +566,7 @@
 
                 <footer>
                     <p>© 2026 Weidlich LVS - Barcode & Etiketten-System. IT-Support kontaktieren bei Fragen zur Einrichtung.</p>
-                    <div class="mt-2" style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.1.1</div>
+                    <div class="mt-2" style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.6.0</div>
                 </footer>
             </div>
         </div>

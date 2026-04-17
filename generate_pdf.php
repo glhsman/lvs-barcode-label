@@ -58,7 +58,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
 <head>
     <meta charset="UTF-8">
     <title>Druckvorschau - <?= htmlspecialchars($project['name']) ?></title>
-    <link rel="icon" type="image/x-icon" href="barcode_green.ico">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         @page { size: A4; margin: 0; }
         body { margin: 0; padding: 0; background: #f0f0f0; font-family: Arial, sans-serif; }
@@ -78,7 +78,10 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
             pointer-events: none;
             z-index: 1000;
         }
-        .label-object { position: absolute; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .label-object { position: absolute; overflow: hidden; display: flex; align-items: center; }
+        .label-object.text-center { justify-content: center; }
+        .label-object.text-left { justify-content: flex-start; }
+        .label-object.text-right { justify-content: flex-end; }
         .text-vertical { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -2px; }
         @media print {
             body { background: none; }
@@ -149,7 +152,8 @@ foreach ($printQueue as $idx => $record) {
                 $bold = !empty($p['bold']) ? 'font-weight:bold;' : '';
                 $italic = !empty($p['italic']) ? 'font-style:italic;' : '';
                 $vClass = !empty($p['vertical']) ? 'text-vertical' : '';
-                echo "<div class='label-object $vClass' style='{$style} font-size:{$fs}pt; {$bold} {$italic}'>".htmlspecialchars($txt)."</div>";
+                $textAlign = $p['text_align'] ?? 'center';
+                echo "<div class='label-object $vClass text-{$textAlign}' style='{$style} font-size:{$fs}pt; {$bold} {$italic}'>".htmlspecialchars($txt)."</div>";
             } else {
                 $showHTR = isset($p['show_htr']) ? ($p['show_htr'] ? 'true' : 'false') : 'true';
                 echo "<div class='label-object' style='{$style}'><canvas class='barcode-render' data-type='".($p['barcode_type']??'code128')."' data-content='".htmlspecialchars($txt)."' data-htr='{$showHTR}' style='width:100%; height:100%;'></canvas></div>";
@@ -168,12 +172,40 @@ window.onload = () => {
     document.querySelectorAll('.barcode-render').forEach(canvas => {
         try {
             let bType = canvas.getAttribute('data-type');
+            let content = canvas.getAttribute('data-content');
+            
+            // EAN Validierung
+            let hasError = false;
+            let errorMsg = "";
+            if (bType === 'ean8' && !/^\d{8}$/.test(content)) {
+                hasError = true; errorMsg = "EAN8 ERROR\n(8 Ziffern!)";
+            } else if (bType === 'ean13' && !/^\d{12,13}$/.test(content)) {
+                hasError = true; errorMsg = "EAN13 ERROR\n(12-13 Ziffern!)";
+            }
+
+            if (hasError) {
+                const ctx = canvas.getContext('2d');
+                canvas.width = 400; canvas.height = 200;
+                ctx.fillStyle = "#fef2f2";
+                ctx.fillRect(0, 0, 400, 200);
+                ctx.strokeStyle = "#ef4444";
+                ctx.lineWidth = 10;
+                ctx.strokeRect(5, 5, 390, 190);
+                ctx.fillStyle = "#ef4444";
+                ctx.font = "bold 40px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(errorMsg.split('\n')[0], 200, 90);
+                ctx.font = "30px Arial";
+                ctx.fillText(errorMsg.split('\n')[1], 200, 140);
+                return;
+            }
+
             let isQR = bType === 'qr';
             if (isQR) bType = 'qrcode';
             
             const opts = {
                 bcid: bType,
-                text: canvas.getAttribute('data-content'),
+                text: content,
                 scale: 3, 
                 includetext: isQR ? false : (canvas.getAttribute('data-htr') !== 'false')
             };
