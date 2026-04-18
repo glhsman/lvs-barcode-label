@@ -191,7 +191,7 @@ if ($locationId) {
 
 <footer class="text-center py-4 mt-2" style="font-size: 0.8rem; color: #64748b;">
     <p class="mb-1">© 2026 Drinkport KG - Barcode & Etiketten-System. <a href="mailto:it-service@drinkport.de?subject=Unterst%C3%BCtzung%20f%C3%BCr%20das%20Barcode-Tool%20ben%C3%B6tigt&body=...%7Bbitte%20beschreiben%20Sie%20ihr%20Problem%7D..." class="text-secondary">IT-Support</a> kontaktieren bei Fragen zur Einrichtung.</p>
-    <div style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.6.0</div>
+    <div style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.7.0</div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
