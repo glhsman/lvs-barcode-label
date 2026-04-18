@@ -39,7 +39,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
     
     foreach ($lines as $idx => $line) {
-        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? true;
+        $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? false;
         if (!$selected) continue; // Nur gewählte drucken!
         
         $line = trim($line);

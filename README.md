@@ -1,8 +1,25 @@
-# Weidlich LVS - Barcode & Etiketten-System (WebApp) - v2.6.0
+# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.7.0
 
 Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
 
 Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+
+---
+
+## ✨ Neuheiten in Version 2.7.0
+Dieses Update verbessert die Usability des Visual Designers erheblich und behebt kritische Bugs im Datenfluss:
+
+*   **🏢 Branding-Update:** Umbenennung von „Weidlich LVS" zu „Drinkport KG" — die Anwendung ist jetzt für alle Standorte verfügbar.
+*   **📧 Support-Kontakt im Footer:** Der Footer auf der Startseite enthält jetzt einen `IT-Support`-Link, der das Standard-Mailprogramm mit vorausgefüllter E-Mail öffnet (Empfänger, Betreff & Nachrichtenvorlage).
+*   **🎯 Intelligentes Element-Einfügen:** Neue Elemente werden nicht mehr alle auf Position 5/5mm eingefügt, sondern diagonal gestaffelt (um je 5mm versetzt). Dadurch entstehen keine Überlappungen mehr und alle Elemente sind direkt sichtbar.
+*   **⚡ Auto-Selektion neuer Elemente:** Ein neu eingefügtes Element ist sofort selektiert (blau umrandet) und liegt automatisch im Vordergrund — direkt bearbeitbar, ohne andere Elemente wegschieben zu müssen.
+*   **🔼🔽 Ebenen-Verwaltung:** Neue ▲/▼-Buttons in der Objekt-Toolbar ermöglichen es, Elemente eine Ebene nach vorne oder hinten zu verschieben — perfekt für komplexe Designs mit Überlappungen.
+*   **📐 Responsive Icon-Skalierung:** Die Bearbeitungs-Icons (▲, ▼, ✏️, 🗑️) skalieren sich dynamisch mit der Elementhöhe (0.45x bis 1.0x), um immer optimal lesbar zu bleiben.
+*   **🔗 Navigation-Fix:** Der „Projektwahl"-Button in der Designer-Ansicht leitet jetzt zurück zur Projektliste des aktuellen Standorts — nicht mehr zur Standortwahl.
+*   **🐛 Critical Bugs behoben:**
+    - **Druck-Performance:** Fallback-Logik für Datensatz-Auswahl korrigiert (war `?? true`, jetzt `?? false`). Dadurch wurden bei großen Datenmengen (13.000+) unbeabsichtigt alle Datensätze zum PDF hinzugefügt, statt nur der ausgewählten.
+    - **Element-Auswahl:** Einfacher Klick auf ein Element deselektiert jetzt korrekt alle anderen (war: bereits ausgewählte Elemente blieben selektiert).
+    - **Canvas-Deselektierung:** Klick auf einen leeren Bereich des Canvas deselektiert jetzt alle Elemente (war: nicht möglich).
 
 ---
 

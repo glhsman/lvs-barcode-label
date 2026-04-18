@@ -64,9 +64,9 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
         .designer-object { position: absolute; border: 1px dashed #bbb; cursor: move; background: rgba(255,255,255,0.9); color: #000; display: flex; align-items: center; justify-content: center; overflow: visible !important; }
         .designer-object:hover { border-color: #3b82f6; z-index: 1000 !important; }
         .designer-object.selected { border: 2px solid #3b82f6; z-index: 1001 !important; }
-        .obj-controls { position: absolute; top: 0; right: 0; display: none; background: rgba(0,0,0,0.6); padding: 3px; border-radius: 0 0 0 8px; z-index: 2000; }
-        .designer-object:hover .obj-controls { display: flex; }
-        .obj-btn { width: 22px; height: 22px; border: none; border-radius: 4px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-left: 2px; }
+        .obj-controls { position: absolute; top: 0; right: 0; display: none; background: rgba(0,0,0,0.6); padding: 2px; border-radius: 0 0 0 8px; z-index: 2000; transform-origin: top right; }
+        .designer-object:hover .obj-controls, .designer-object.selected .obj-controls { display: flex; }
+        .obj-btn { width: 20px; height: 20px; border: none; border-radius: 3px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 2px; }
         .sticky-top-table { position: sticky; top: 0; background: #1e293b; z-index: 10; border-bottom: 2px solid #3b82f6; }
         .nav-pills .nav-link { color: #94a3b8; border-radius: 12px; transition: all 0.3s; padding: 10px 25px; font-weight: 500; font-size: 0.9rem; }
         .nav-pills .nav-link.active { background: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
@@ -81,7 +81,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
 <nav class="navbar navbar-expand-lg navbar-dark mb-4 py-3">
     <div class="container container-fluid">
         <div class="d-flex align-items-center">
-            <a href="index.php" class="btn btn-outline-light btn-sm me-3 border-secondary"><i class="bi bi-arrow-left me-1"></i> Projektwahl</a>
+            <a href="index.php?location_id=<?= $project['location_id'] ?>" class="btn btn-outline-light btn-sm me-3 border-secondary"><i class="bi bi-arrow-left me-1"></i> Projektwahl</a>
             <a class="navbar-brand fw-bold d-flex align-items-center m-0" href="index.php">
                 <div class="d-flex align-items-center justify-content-center bg-primary bg-gradient rounded shadow-sm me-2" style="width: 32px; height: 32px;">
                     <i class="bi bi-upc-scan text-white" style="font-size: 1.1rem;"></i>
@@ -465,6 +465,14 @@ function renderObjects() {
     const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value) || 10;
     const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value) || 10;
 
+    // Canvas-Klick: Alle deselektieren
+    canv.addEventListener('click', (e) => {
+        if (e.target === canv) {
+            selectedIndices = [];
+            document.querySelectorAll('.designer-object').forEach(el => el.classList.remove('selected'));
+        }
+    }, true);
+
     // Kalibrierungsrahmen (1mm innerhalb der Begrenzung)
     if (document.getElementById('showCalibrationBorder').checked) {
         const border = document.createElement('div');
@@ -496,7 +504,12 @@ function renderObjects() {
         div.style.cssText = `left:${obj.x_mm*PX_PER_MM}px; top:${obj.y_mm*PX_PER_MM}px; width:${obj.width_mm*PX_PER_MM}px; height:${obj.height_mm*PX_PER_MM}px;`;
         const ctrl = document.createElement('div');
         ctrl.className = 'obj-controls no-print';
-        ctrl.innerHTML = `<div class="obj-btn" style="background:#3b82f6" onclick="event.stopPropagation(); editObject(${idx})">✏️</div>
+        const elHeightPx = obj.height_mm * PX_PER_MM;
+        const ctrlScale = Math.min(1, Math.max(0.45, elHeightPx / 56));
+        ctrl.style.transform = `scale(${ctrlScale.toFixed(2)})`;
+        ctrl.innerHTML = `<div class="obj-btn" style="background:#6366f1" title="Ebene nach vorne" onclick="event.stopPropagation(); bringForward(${idx})">▲</div>
+                          <div class="obj-btn" style="background:#6366f1" title="Ebene nach hinten" onclick="event.stopPropagation(); sendBackward(${idx})">▼</div>
+                          <div class="obj-btn" style="background:#3b82f6" onclick="event.stopPropagation(); editObject(${idx})">✏️</div>
                           <div class="obj-btn" style="background:#ef4444" onclick="event.stopPropagation(); deleteObject(${idx})">🗑️</div>`;
         div.appendChild(ctrl);
         const inner = document.createElement('div');
@@ -620,9 +633,7 @@ function renderObjects() {
                     selectedIndices.push(idx);
                 }
             } else {
-                if (!selectedIndices.includes(idx)) {
-                    selectedIndices = [idx];
-                }
+                selectedIndices = [idx];
             }
             
             document.querySelectorAll('.designer-object').forEach((el, i) => {
@@ -658,8 +669,30 @@ function renderObjects() {
         canv.appendChild(div);
     });
 }
-function addObject(t) { labelObjects.push({type:t, x_mm:5, y_mm:5, width_mm:40, height_mm:15, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}}); renderObjects(); }
+function addObject(t) {
+    const STEP = 5, W = 40, H = 15;
+    const n = labelObjects.length;
+    const maxX = Math.max(0, formatW - W);
+    const maxY = Math.max(0, formatH - H);
+    const offsetX = Math.min(n * STEP, maxX);
+    const offsetY = Math.min(n * STEP, maxY);
+    labelObjects.push({type:t, x_mm: offsetX, y_mm: offsetY, width_mm:W, height_mm:H, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}});
+    selectedIndices = [labelObjects.length - 1];
+    renderObjects();
+}
 function deleteObject(idx) { labelObjects.splice(idx, 1); selectedIndices = selectedIndices.filter(i => i !== idx).map(i => i > idx ? i - 1 : i); renderObjects(); }
+function bringForward(idx) {
+    if (idx >= labelObjects.length - 1) return;
+    [labelObjects[idx], labelObjects[idx+1]] = [labelObjects[idx+1], labelObjects[idx]];
+    selectedIndices = selectedIndices.map(i => i === idx ? idx+1 : i === idx+1 ? idx : i);
+    renderObjects();
+}
+function sendBackward(idx) {
+    if (idx <= 0) return;
+    [labelObjects[idx], labelObjects[idx-1]] = [labelObjects[idx-1], labelObjects[idx]];
+    selectedIndices = selectedIndices.map(i => i === idx ? idx-1 : i === idx-1 ? idx : i);
+    renderObjects();
+}
 function editObject(idx) {
     if (!selectedIndices.includes(idx)) selectedIndices = [idx];
     const o = labelObjects[idx];
