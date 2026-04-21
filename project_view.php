@@ -228,6 +228,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                     <button class="btn btn-dark" onclick="addObject('text')"><i class="bi bi-plus me-1"></i> Text</button>
                                     <button class="btn btn-dark" onclick="addObject('barcode')"><i class="bi bi-plus me-1"></i> Barcode</button>
                                 </div>
+                                <button class="btn btn-sm btn-outline-secondary px-3 me-2" onclick="editObject(selectedIndices[0])" title="Eigenschaften des gewählten Objekts bearbeiten" id="btnEditSelected" disabled><i class="bi bi-pencil me-1"></i> Bearbeiten</button>
                                 <div class="btn-group btn-group-sm me-3 border border-secondary rounded overflow-hidden">
                                     <button class="btn btn-dark" onclick="alignObjects('left')" title="Links ausrichten"><i class="bi bi-align-start"></i></button>
                                     <button class="btn btn-dark" onclick="alignObjects('width')" title="Einheilt. Breite"><i class="bi bi-arrows-expand" style="transform: rotate(90deg); display: inline-block;"></i></button>
@@ -475,10 +476,20 @@ function filterTable() {
     }, 300); // 300ms Verzögerung abwarten
 }
 
+function updateEditButton() {
+    const btn = document.getElementById('btnEditSelected');
+    if (!btn) return;
+    const hasOne = selectedIndices.length === 1;
+    btn.disabled = !hasOne;
+    btn.classList.toggle('btn-outline-primary', hasOne);
+    btn.classList.toggle('btn-outline-secondary', !hasOne);
+}
+
 function renderObjects() {
     const canv = document.getElementById('designer-canvas');
     if(!canv) return;
     canv.innerHTML = '';
+    updateEditButton();
 
     const pId = <?= $projectId ?>;
     const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value) || 10;
@@ -489,6 +500,7 @@ function renderObjects() {
         if (e.target === canv) {
             selectedIndices = [];
             document.querySelectorAll('.designer-object').forEach(el => el.classList.remove('selected'));
+            updateEditButton();
         }
     }, true);
 
@@ -660,6 +672,7 @@ function renderObjects() {
                 if (selectedIndices.includes(i)) el.classList.add('selected');
                 else el.classList.remove('selected');
             });
+            updateEditButton();
 
             const sX=e.clientX, sY=e.clientY;
             const initialPos = selectedIndices.map(i => ({idx: i, x: labelObjects[i].x_mm * PX_PER_MM, y: labelObjects[i].y_mm * PX_PER_MM}));
