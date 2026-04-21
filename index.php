@@ -26,8 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_project_id']))
 
 // Daten abrufen
 if ($locationId) {
-    // Projekte für diesen Standort
-    $stmt = $pdo->prepare("SELECT * FROM projects WHERE location_id = ? ORDER BY modified_at DESC");
+    // Projekte für diesen Standort inkl. Formatgröße
+    $stmt = $pdo->prepare("
+        SELECT p.*, lf.width_mm, lf.height_mm
+        FROM projects p
+        LEFT JOIN label_formats lf ON lf.project_id = p.id
+        WHERE p.location_id = ?
+        ORDER BY p.modified_at DESC
+    ");
     $stmt->execute([$locationId]);
     $projects = $stmt->fetchAll();
 } else {
@@ -138,7 +144,22 @@ if ($locationId) {
                         <div class="card h-100 project-card" onclick="location.href='project_view.php?id=<?= $project['id'] ?>'">
                             <div class="card-body position-relative p-4">
                                 <h5 class="card-title pe-4"><?php echo htmlspecialchars($project['name']); ?></h5>
-                                <p class="card-text text-muted small"><?php echo htmlspecialchars($project['description'] ?? ''); ?></p>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <?php if ($project['width_mm'] && $project['height_mm']): ?>
+                                        <span class="badge rounded-pill bg-dark border border-secondary text-secondary fw-normal px-3" style="font-size:0.72rem;">
+                                            <i class="bi bi-rulers me-1"></i><?= (int)$project['width_mm'] ?> &times; <?= (int)$project['height_mm'] ?> mm
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($project['csv_filename'])): ?>
+                                        <span class="badge rounded-pill bg-dark border border-success text-success fw-normal px-3" style="font-size:0.72rem;" title="<?= htmlspecialchars($project['csv_filename']) ?>">
+                                            <i class="bi bi-file-earmark-spreadsheet me-1"></i><?= htmlspecialchars($project['csv_filename']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge rounded-pill bg-dark border border-secondary text-secondary fw-normal px-3" style="font-size:0.72rem; opacity:0.6;">
+                                            <i class="bi bi-pencil me-1"></i>Statisch (kein CSV)
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
 
                                 <!-- Löschen-Button -->
                                 <form method="POST" action="index.php?location_id=<?= $locationId ?>" class="position-absolute" style="right: 15px; top: 15px;" onsubmit="event.stopPropagation();">
