@@ -15,10 +15,10 @@ if ($locationId) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_project_id'])) {
     $delId = (int)$_POST['delete_project_id'];
     $pdo->prepare("DELETE FROM projects WHERE id = ?")->execute([$delId]);
-    
+
     unset($_SESSION["csv_raw_13k_project_{$delId}"]);
     unset($_SESSION["csv_selected_{$delId}"]);
-    
+
     $redirectUrl = $locationId ? "index.php?location_id=$locationId" : "index.php";
     header("Location: $redirectUrl");
     exit;
@@ -33,10 +33,10 @@ if ($locationId) {
 } else {
     // Alle Standorte auflisten
     $stmt = $pdo->query("
-        SELECT l.id, l.name, l.logo_data, COUNT(p.id) as project_count 
-        FROM locations l 
-        LEFT JOIN projects p ON l.id = p.location_id 
-        GROUP BY l.id 
+        SELECT l.id, l.name, l.logo_data, COUNT(p.id) as project_count
+        FROM locations l
+        LEFT JOIN projects p ON l.id = p.location_id
+        GROUP BY l.id
         ORDER BY l.name ASC
     ");
     $locationsList = $stmt->fetchAll();
@@ -139,7 +139,7 @@ if ($locationId) {
                             <div class="card-body position-relative p-4">
                                 <h5 class="card-title pe-4"><?php echo htmlspecialchars($project['name']); ?></h5>
                                 <p class="card-text text-muted small"><?php echo htmlspecialchars($project['description'] ?? ''); ?></p>
-                                
+
                                 <!-- Löschen-Button -->
                                 <form method="POST" action="index.php?location_id=<?= $locationId ?>" class="position-absolute" style="right: 15px; top: 15px;" onsubmit="event.stopPropagation();">
                                     <input type="hidden" name="delete_project_id" value="<?= $project['id'] ?>">
@@ -175,14 +175,14 @@ if ($locationId) {
                         <input type="text" class="form-control bg-dark text-light border-secondary" name="project_name" placeholder="z.B. Paletten-Etiketten" required>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label text-secondary small">CSV-Datei auswählen</label>
-                        <input class="form-control bg-dark text-light border-secondary" type="file" name="csv_file" accept=".csv" required>
-                        <div class="form-text mt-2" style="font-size: 0.75rem; color: #94a3b8 !important;">Kodierung: UTF-8 oder Excel-CSV (Windows-1252)</div>
+                        <label class="form-label text-secondary small">CSV-Datei auswählen <span style="color: #64748b;">(optional)</span></label>
+                        <input class="form-control bg-dark text-light border-secondary" type="file" name="csv_file" accept=".csv">
+                        <div class="form-text mt-2" style="font-size: 0.75rem; color: #94a3b8 !important;">Kodierung: UTF-8 oder Excel-CSV (Windows-1252). Ohne Datei wird ein leeres Projekt angelegt.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4">
                     <button type="button" class="btn btn-link text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
-                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Hochladen & Importieren</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Erstellen</button>
                 </div>
             </form>
         </div>

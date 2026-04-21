@@ -99,9 +99,15 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
 </div>
 
 <?php
+$hasCsvData = isset($_SESSION["csv_raw_13k_project_{$projectId}"]);
 if (empty($records)) {
-    echo '<div style="padding:50px; text-align:center;"><h2>Keine Datensätze ausgewählt.</h2><p>Bitte haken Sie in der Projektansicht die gewünschten Zeilen an.</p></div>';
-    exit;
+    if ($hasCsvData) {
+        // CSV vorhanden, aber keine Zeile ausgewählt
+        echo '<div style="padding:50px; text-align:center;"><h2>Keine Datensätze ausgewählt.</h2><p>Bitte haken Sie in der Projektansicht die gewünschten Zeilen an.</p></div>';
+        exit;
+    }
+    // Kein CSV – leeres Projekt, ein statisches Etikett rendern
+    $records = [null];
 }
 
 $labelsPerPage = $format['cols'] * $format['rows'];
@@ -135,14 +141,16 @@ foreach ($printQueue as $idx => $record) {
         $frameH = $format['height_mm'] - 1;
         echo "<div class='calibration-frame' style='left:0.5mm; top:0.5mm; width:{$frameW}mm; height:{$frameH}mm;'></div>";
     }
-    if ($record) {
+    if ($record !== null || !empty($objects)) {
         foreach ($objects as $obj) {
             $p = $obj['properties'];
             if (is_string($p)) $p = json_decode($p, true) ?: [];
 
             $txt = $p['content'] ?? '';
-            foreach ($record as $k => $v) {
-                $txt = str_ireplace("[~$k~]", (string)$v, $txt);
+            if ($record) {
+                foreach ($record as $k => $v) {
+                    $txt = str_ireplace("[~$k~]", (string)$v, $txt);
+                }
             }
 
             $rotation = (float)($obj['rotation'] ?? 0);
