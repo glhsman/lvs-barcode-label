@@ -236,6 +236,12 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                     <button class="btn btn-dark" onclick="adjustSpacing(1)" title="Abstand +"><i class="bi bi-plus"></i></button>
                                     <button class="btn btn-dark" onclick="adjustSpacing(-1)" title="Abstand -"><i class="bi bi-dash"></i></button>
                                 </div>
+                                <div class="btn-group btn-group-sm me-2 border border-secondary rounded overflow-hidden" title="Zoom">
+                                    <button class="btn btn-dark px-2" onclick="manualZoom(-0.1)" title="Verkleinern"><i class="bi bi-zoom-out"></i></button>
+                                    <button class="btn btn-dark px-2" id="zoomLabel" style="min-width:46px; font-size:0.75rem; cursor:default;">100%</button>
+                                    <button class="btn btn-dark px-2" onclick="manualZoom(+0.1)" title="Vergrößern"><i class="bi bi-zoom-in"></i></button>
+                                    <button class="btn btn-dark px-2" onclick="resetZoom()" title="An Bereich anpassen"><i class="bi bi-fullscreen"></i></button>
+                                </div>
                                 <button class="btn btn-sm btn-outline-info px-3 me-2 border-info" onclick="openPreview()"><i class="bi bi-eye me-1"></i> Vorschau</button>
                                 <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="saveDesigner()"><i class="bi bi-cloud-check me-1"></i> Design speichern</button>
                             </div>
@@ -373,7 +379,30 @@ function updateDesignerZoom() {
     if (newZoom < 0.2) newZoom = 0.2;
 
     window.zoomLevel = newZoom; // Global verfügbar machen für Drag&Drop
-    document.getElementById('zoom-container').style.transform = `scale(${newZoom})`;
+    window._autoZoom = newZoom; // Auto-Zoom merken für Reset
+    window._manualZoom = null; // Auto-Zoom zurücksetzen
+    applyZoom(newZoom);
+}
+
+function applyZoom(z) {
+    window.zoomLevel = z;
+    document.getElementById('zoom-container').style.transform = `scale(${z})`;
+    const lbl = document.getElementById('zoomLabel');
+    if (lbl) lbl.textContent = Math.round(z * 100) + '%';
+}
+
+function manualZoom(delta) {
+    const current = window._manualZoom !== null ? window._manualZoom : window.zoomLevel;
+    let next = Math.round((current + delta) * 10) / 10;
+    if (next < 0.1) next = 0.1;
+    if (next > 5.0) next = 5.0;
+    window._manualZoom = next;
+    applyZoom(next);
+}
+
+function resetZoom() {
+    window._manualZoom = null;
+    applyZoom(window._autoZoom || 1);
 }
 
 function renderRulers(fw, fh) {
