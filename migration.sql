@@ -1,6 +1,9 @@
 -- Migration für bestehende Datenbanken (Drinkport-Barcode)
 -- Führt fehlende Spalten zur Tabelle 'label_formats' hinzu und implementiert Standortverwaltung
 
+-- CSV-Dateiname am Projekt speichern
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS csv_filename VARCHAR(255) NULL AFTER description;
+
 -- Spalten für Kalibrierung und Skalierung (falls noch nicht vorhanden)
 ALTER TABLE label_formats ADD COLUMN IF NOT EXISTS show_calibration_border TINYINT(1) DEFAULT 0;
 ALTER TABLE label_formats ADD COLUMN IF NOT EXISTS print_scale FLOAT NOT NULL DEFAULT 100.0;
@@ -18,8 +21,8 @@ CREATE TABLE IF NOT EXISTS locations (
 ALTER TABLE locations ADD COLUMN IF NOT EXISTS logo_data LONGTEXT NULL AFTER name;
 
 -- Einen Standard-Standort anlegen, falls keiner existiert
-INSERT INTO locations (id, name) 
-SELECT 1, 'Hauptstandort' FROM DUAL 
+INSERT INTO locations (id, name)
+SELECT 1, 'Hauptstandort' FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM locations LIMIT 1);
 
 -- Projekte um location_id erweitern

@@ -37,15 +37,15 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $lines = explode("\n", str_replace("\r", "", $csvData));
     $headerLine = array_shift($lines);
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
-    
+
     foreach ($lines as $idx => $line) {
         $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? false;
         if (!$selected) continue; // Nur gewählte drucken!
-        
+
         $line = trim($line);
         if (!$line) continue;
         $row = str_getcsv($line, $delimiter, '"', '');
-        
+
         $records[$idx] = [];
         foreach ($fields as $colIdx => $field) {
             $records[$idx][$field['name']] = $row[$colIdx] ?? '';
@@ -62,12 +62,12 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     <style>
         @page { size: A4; margin: 0; }
         body { margin: 0; padding: 0; background: #f0f0f0; font-family: Arial, sans-serif; }
-        .page { 
-            width: 210mm; height: 297mm; background: white; margin: 10mm auto; 
+        .page {
+            width: 210mm; height: 297mm; background: white; margin: 10mm auto;
             position: relative; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.2);
             page-break-after: always;
         }
-        .label { 
+        .label {
             position: absolute; width: <?= $format['width_mm'] ?>mm; height: <?= $format['height_mm'] ?>mm;
             box-sizing: border-box; overflow: hidden;
         }
@@ -121,7 +121,7 @@ foreach ($printQueue as $idx => $record) {
 
     $col = $idx % $format['cols'];
     $row = floor(($idx % $labelsPerPage) / $format['cols']);
-    
+
     $left = $format['margin_left_mm'] + ($col * ($format['width_mm'] + $format['col_gap_mm']));
     $top = $format['margin_top_mm'] + ($row * ($format['height_mm'] + $format['row_gap_mm']));
 
@@ -139,14 +139,16 @@ foreach ($printQueue as $idx => $record) {
         foreach ($objects as $obj) {
             $p = $obj['properties'];
             if (is_string($p)) $p = json_decode($p, true) ?: [];
-            
+
             $txt = $p['content'] ?? '';
             foreach ($record as $k => $v) {
                 $txt = str_ireplace("[~$k~]", (string)$v, $txt);
             }
 
-            $style = "left:{$obj['x_mm']}mm; top:{$obj['y_mm']}mm; width:{$obj['width_mm']}mm; height:{$obj['height_mm']}mm; color:black !important;";
-            
+            $rotation = (float)($obj['rotation'] ?? 0);
+            $rotStyle = $rotation != 0 ? "transform: rotate({$rotation}deg); transform-origin: center center;" : '';
+            $style = "left:{$obj['x_mm']}mm; top:{$obj['y_mm']}mm; width:{$obj['width_mm']}mm; height:{$obj['height_mm']}mm; color:black !important; {$rotStyle}";
+
             if ($obj['type'] === 'text') {
                 $fs = $p['font_size'] ?? 10;
                 $bold = !empty($p['bold']) ? 'font-weight:bold;' : '';
@@ -173,7 +175,7 @@ window.onload = () => {
         try {
             let bType = canvas.getAttribute('data-type');
             let content = canvas.getAttribute('data-content');
-            
+
             // EAN Validierung
             let hasError = false;
             let errorMsg = "";
@@ -202,15 +204,15 @@ window.onload = () => {
 
             let isQR = bType === 'qr';
             if (isQR) bType = 'qrcode';
-            
+
             const opts = {
                 bcid: bType,
                 text: content,
-                scale: 3, 
+                scale: 3,
                 includetext: isQR ? false : (canvas.getAttribute('data-htr') !== 'false')
             };
             if(!isQR) opts.height = 10;
-            
+
             bwipjs.toCanvas(canvas, opts);
             canvas.style.objectFit = 'contain';
         } catch (e) { console.error(e); }

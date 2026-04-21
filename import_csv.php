@@ -41,13 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 1. Projekt erstellen
         $locationId = (int)($_POST['location_id'] ?? 1);
-        $stmt = $pdo->prepare("INSERT INTO projects (location_id, name, description, created_at, modified_at) VALUES (?, ?, 'Importiert aus Web-Interface', NOW(), NOW())");
-        $stmt->execute([$locationId, $projectName]);
+        $csvFilename = basename($_FILES['csv_file']['name']);
+        $stmt = $pdo->prepare("INSERT INTO projects (location_id, name, description, csv_filename, created_at, modified_at) VALUES (?, ?, 'Importiert aus Web-Interface', ?, NOW(), NOW())");
+        $stmt->execute([$locationId, $projectName, $csvFilename]);
         $projectId = $pdo->lastInsertId();
 
         // 2. CSV einlesen und Kodierung behandeln
         $csvData = file_get_contents($file);
-        
+
         // Erkennung der Kodierung (Windows-1252 ist bei CSV aus Excel oft Standard)
         $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
         if ($encoding !== 'UTF-8') {
@@ -70,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($header as $index => $colName) {
             $colName = trim($colName);
             if (empty($colName)) $colName = "Spalte " . ($index + 1);
-            
+
             $stmt = $pdo->prepare("INSERT INTO project_fields (project_id, name, position) VALUES (?, ?, ?)");
             $stmt->execute([$projectId, $colName, $index]);
             $fieldIds[$index] = $pdo->lastInsertId();
@@ -81,9 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
         $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig nichts selektiert
         $recordCount = count($lines) - 1; // Header abziehen
-        
+
         // 5. Standard-Etikettenformat anlegen
-        $stmt = $pdo->prepare("INSERT INTO label_formats (project_id, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`) 
+        $stmt = $pdo->prepare("INSERT INTO label_formats (project_id, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`)
                                VALUES (?, 100.0, 50.0, 2.0, 2.0, 2.0, 2.0, 1, 1)");
         $stmt->execute([$projectId]);
 

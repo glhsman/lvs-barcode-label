@@ -30,13 +30,13 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $lines = explode("\n", str_replace("\r", "", $csvData));
     $headerLine = array_shift($lines);
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
-    
+
     foreach ($lines as $idx => $line) {
         $line = trim($line);
         if (!$line) continue;
         $row = str_getcsv($line, $delimiter, '"', '');
         $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? false;
-        
+
         $values = [];
         foreach ($fields as $colIdx => $field) {
              $values[$field['id']] = $row[$colIdx] ?? '';
@@ -164,7 +164,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 <ul class="nav nav-pills glass-card p-1 m-0" style="width:fit-content;" id="pills-tab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="pills-data-tab" data-bs-toggle="pill" data-bs-target="#pills-data" type="button" role="tab">
-                            <i class="bi bi-grid-3x3-gap me-2"></i>DATEN 
+                            <i class="bi bi-grid-3x3-gap me-2"></i>DATEN
                             <span class="badge bg-light text-dark ms-2 rounded-pill"><?= count($records) ?> <small class="text-muted" style="font-size: 0.6rem;">Zeilen</small></span>
                         </button>
                     </li>
@@ -172,9 +172,16 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                         <button class="nav-link" id="pills-designer-tab" data-bs-toggle="pill" data-bs-target="#pills-designer" type="button" role="tab"><i class="bi bi-palette-fill me-2"></i>DESIGNER</button>
                     </li>
                 </ul>
-                <button class="btn btn-outline-warning text-danger" style="border-color: #a3e635; color: #ef4444 !important; background: transparent; padding: 6px 20px;" onclick="document.getElementById('csvUploadInput').click()">
-                    Reload csv
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <?php if (!empty($project['csv_filename'])): ?>
+                    <span class="text-secondary small" style="border: 1px solid #a3e635; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem;">
+                        <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i><?= htmlspecialchars($project['csv_filename']) ?>
+                    </span>
+                    <?php endif; ?>
+                    <button class="btn btn-outline-warning text-danger" style="border-color: #a3e635; color: #ef4444 !important; background: transparent; padding: 6px 20px;" onclick="document.getElementById('csvUploadInput').click()">
+                        Reload csv
+                    </button>
+                </div>
                 <form id="csvReloadForm" style="display:none;" action="reload_csv.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="project_id" value="<?= $projectId ?>">
                     <input type="file" id="csvUploadInput" name="csv_file" accept=".csv" onchange="document.getElementById('csvReloadForm').submit()">
@@ -238,7 +245,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <!-- Lineale -->
                                 <div id="ruler-x" style="position:absolute; top:-20px; left:0; width:<?= $format['width_mm']*3.78?>px; height:20px; border-bottom:1px solid #475569; font-size:9px; color:#94a3b8; font-family:monospace; text-align:left;"></div>
                                 <div id="ruler-y" style="position:absolute; left:-30px; top:0; height:<?= $format['height_mm']*3.78?>px; width:30px; border-right:1px solid #475569; font-size:9px; color:#94a3b8; font-family:monospace;"></div>
-                                
+
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
@@ -276,6 +283,18 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             <div class="row g-2 mt-2">
                 <div class="col-6"><label class="form-label-sm">Breite der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objWidth"></div>
                 <div class="col-6"><label class="form-label-sm">Höhe der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objHeight"></div>
+            </div>
+            <div class="mt-3">
+                <label class="form-label-sm mb-1">Rotation</label>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary" onclick="setObjRotation(0)">0°</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="setObjRotation(90)">90°</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="setObjRotation(180)">180°</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="setObjRotation(270)">270°</button>
+                    </div>
+                    <input type="number" step="1" min="0" max="359" class="form-control bg-dark text-light border-secondary" id="objRotation" style="width:80px;" placeholder="°">
+                </div>
             </div>
             <!-- Formatierungs-Optionen -->
             <div id="textOptionsGroup" class="mt-4 pt-3 border-top border-secondary">
@@ -333,7 +352,7 @@ function updateDesignerZoom() {
     const canv = document.getElementById('designer-canvas');
     const rx = document.getElementById('ruler-x');
     const ry = document.getElementById('ruler-y');
-    
+
     // Canvas Größe live anpassen
     canv.style.width = (fw * pxPerMm) + 'px';
     canv.style.height = (fh * pxPerMm) + 'px';
@@ -344,14 +363,14 @@ function updateDesignerZoom() {
     renderRulers(fw, fh);
 
     // Zoom-Berechnung
-    const targetAreaW = 850; 
+    const targetAreaW = 850;
     const targetAreaH = 450;
     let scaleW = targetAreaW / (fw * pxPerMm);
     let scaleH = targetAreaH / (fh * pxPerMm);
     let newZoom = Math.min(scaleW, scaleH);
     if (newZoom > 5.0) newZoom = 5.0;
     if (newZoom < 0.2) newZoom = 0.2;
-    
+
     window.zoomLevel = newZoom; // Global verfügbar machen für Drag&Drop
     document.getElementById('zoom-container').style.transform = `scale(${newZoom})`;
 }
@@ -361,13 +380,13 @@ function renderRulers(fw, fh) {
     const ry = document.getElementById('ruler-y');
     rx.innerHTML = '';
     ry.innerHTML = '';
-    
+
     for(let i=0; i<=fw; i+=10) {
         rx.innerHTML += `<div style="position:absolute; left:${i*pxPerMm}px; bottom:2px; transform:translateX(2px);">${i}</div>
                          <div style="position:absolute; left:${i*pxPerMm}px; bottom:0; height:12px; border-left:1px solid #475569;"></div>`;
     }
     for(let i=5; i<=fw; i+=10) rx.innerHTML += `<div style="position:absolute; left:${i*pxPerMm}px; bottom:0; height:5px; border-left:1px solid #475569;"></div>`;
-    
+
     for(let i=0; i<=fh; i+=10) {
         ry.innerHTML += `<div style="position:absolute; top:${i*pxPerMm}px; right:12px; transform:translateY(-50%);">${i}</div>
                          <div style="position:absolute; top:${i*pxPerMm}px; right:0; width:10px; border-top:1px solid #475569;"></div>`;
@@ -397,12 +416,12 @@ let selectedIndices = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash;
-    if (hash) { 
-        const tCol = document.querySelector(`button[data-bs-target="${hash}"]`); 
-        if(tCol) bootstrap.Tab.getOrCreateInstance(tCol).show(); 
+    if (hash) {
+        const tCol = document.querySelector(`button[data-bs-target="${hash}"]`);
+        if(tCol) bootstrap.Tab.getOrCreateInstance(tCol).show();
     }
     document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', (e) => { 
+        tab.addEventListener('shown.bs.tab', (e) => {
             const t = e.target.getAttribute('data-bs-target');
             history.replaceState(null, null, t);
             if(t==='#pills-designer') renderObjects();
@@ -431,7 +450,7 @@ function filterTable() {
                 col: parseInt(input.getAttribute('data-col')),
                 val: input.value.toLowerCase()
             }));
-        
+
         const rows = document.getElementById('data-table-body').rows;
         const rowCount = rows.length;
 
@@ -439,7 +458,7 @@ function filterTable() {
             for (let i = 0; i < rowCount; i++) rows[i].style.display = '';
             return;
         }
-        
+
         for (let i = 0; i < rowCount; i++) {
             const cells = rows[i].cells;
             let showRow = true;
@@ -480,7 +499,7 @@ function renderObjects() {
         border.style.boxSizing = 'border-box';
         border.style.pointerEvents = 'none';
         border.style.zIndex = '500';
-        
+
         // Der Rahmen soll 1mm kleiner sein als das Etikett (0.5mm Rand rundherum)
         // Linienstärke 1mm
         const bW = (fw - 1) * PX_PER_MM;
@@ -494,14 +513,15 @@ function renderObjects() {
         border.style.width = bW + 'px';
         border.style.height = bH + 'px';
         border.style.border = `${bThick}px solid rgba(239, 68, 68, 0.6)`; // Rötlich und halbtransparent
-        
+
         canv.appendChild(border);
     }
 
     labelObjects.forEach((obj, idx) => {
         const div = document.createElement('div');
         div.className = 'designer-object ' + (selectedIndices.includes(idx) ? 'selected' : '');
-        div.style.cssText = `left:${obj.x_mm*PX_PER_MM}px; top:${obj.y_mm*PX_PER_MM}px; width:${obj.width_mm*PX_PER_MM}px; height:${obj.height_mm*PX_PER_MM}px;`;
+        const rot = obj.rotation || 0;
+        div.style.cssText = `left:${obj.x_mm*PX_PER_MM}px; top:${obj.y_mm*PX_PER_MM}px; width:${obj.width_mm*PX_PER_MM}px; height:${obj.height_mm*PX_PER_MM}px; transform: rotate(${rot}deg);`;
         const ctrl = document.createElement('div');
         ctrl.className = 'obj-controls no-print';
         const elHeightPx = obj.height_mm * PX_PER_MM;
@@ -514,9 +534,9 @@ function renderObjects() {
         div.appendChild(ctrl);
         const inner = document.createElement('div');
         inner.style.pointerEvents = 'none'; inner.style.width='100%'; inner.style.height='100%'; inner.style.display='flex'; inner.style.alignItems='center'; inner.style.justifyContent='center';
-        
-        if(obj.type==='text') { 
-            inner.innerText = obj.properties.content||'Text'; 
+
+        if(obj.type==='text') {
+            inner.innerText = obj.properties.content||'Text';
             inner.style.fontSize = (obj.properties.font_size||10)+'pt';
             if(obj.properties.bold) inner.style.fontWeight = 'bold';
             if(obj.properties.italic) inner.style.fontStyle = 'italic';
@@ -529,11 +549,11 @@ function renderObjects() {
             if (ta === 'left') inner.style.justifyContent = 'flex-start';
             if (ta === 'right') inner.style.justifyContent = 'flex-end';
         }
-        else { 
-            const c = document.createElement('canvas'); 
+        else {
+            const c = document.createElement('canvas');
             const bType = obj.properties.barcode_type||'code128';
             const content = obj.properties.content||'123';
-            
+
             // EAN Validierung (nur falls kein Platzhalter enthalten ist)
             let hasError = false;
             let errorMsg = "";
@@ -550,25 +570,25 @@ function renderObjects() {
                 inner.appendChild(warn);
             }
 
-            try { 
+            try {
                 let bTypeInternal = bType;
                 let isQR = bTypeInternal === 'qr';
                 if(isQR) bTypeInternal = 'qrcode';
-                
+
                 const opts = {
-                    bcid: bTypeInternal, 
-                    text: content, 
+                    bcid: bTypeInternal,
+                    text: content,
                     scale: 2,
                     includetext: isQR ? false : (obj.properties.show_htr !== false)
                 };
                 if(!isQR) opts.height = 10;
-                
-                bwipjs.toCanvas(c, opts); 
+
+                bwipjs.toCanvas(c, opts);
                 c.style.width = '100%';
                 c.style.height = '100%';
                 c.style.objectFit = 'contain';
-            } catch(e){} 
-            inner.appendChild(c); 
+            } catch(e){}
+            inner.appendChild(c);
         }
         div.appendChild(inner);
 
@@ -581,18 +601,18 @@ function renderObjects() {
                 const sX=e.clientX, sY=e.clientY;
                 const iW=obj.width_mm, iH=obj.height_mm, iX=obj.x_mm, iY=obj.y_mm;
                 const isQR = obj.properties.barcode_type === 'qr';
-                
+
                 const move = (ev) => {
                     const dx = (ev.clientX - sX) / (PX_PER_MM * zoomLevel);
                     const dy = (ev.clientY - sY) / (PX_PER_MM * zoomLevel);
-                    
+
                     let nw = iW, nh = iH, nx = iX, ny = iY;
-                    
+
                     if(pos.includes('r')) nw = iW + dx;
                     if(pos.includes('l')) { nw = iW - dx; nx = iX + dx; }
                     if(pos.includes('b')) nh = iH + dy;
                     if(pos.includes('t')) { nh = iH - dy; ny = iY + dy; }
-                    
+
                     if(nw < 3) { if(pos.includes('l')) nx = iX + (iW - 3); nw = 3; }
                     if(nh < 3) { if(pos.includes('t')) ny = iY + (iH - 3); nh = 3; }
 
@@ -603,19 +623,19 @@ function renderObjects() {
                         else if(pos === 'tr') { ny = iY + (iH - newSize); nw = newSize; nh = newSize; }
                         else if(pos === 'bl') { nx = iX + (iW - newSize); nw = newSize; nh = newSize; }
                     }
-                    
+
                     obj.width_mm = nw; obj.height_mm = nh;
                     obj.x_mm = nx; obj.y_mm = ny;
-                    
+
                     div.style.width = (nw * PX_PER_MM) + 'px';
                     div.style.height = (nh * PX_PER_MM) + 'px';
                     div.style.left = (nx * PX_PER_MM) + 'px';
                     div.style.top = (ny * PX_PER_MM) + 'px';
                 };
-                const up = () => { 
-                    document.removeEventListener('mousemove', move); 
+                const up = () => {
+                    document.removeEventListener('mousemove', move);
                     document.removeEventListener('mouseup', up);
-                    renderObjects(); 
+                    renderObjects();
                 };
                 document.addEventListener('mousemove', move);
                 document.addEventListener('mouseup', up);
@@ -625,7 +645,7 @@ function renderObjects() {
 
         div.onmousedown = (e) => {
             if(e.target.classList.contains('obj-btn')) return;
-            
+
             if (e.ctrlKey) {
                 if (selectedIndices.includes(idx)) {
                     selectedIndices = selectedIndices.filter(i => i !== idx);
@@ -635,7 +655,7 @@ function renderObjects() {
             } else {
                 selectedIndices = [idx];
             }
-            
+
             document.querySelectorAll('.designer-object').forEach((el, i) => {
                 if (selectedIndices.includes(i)) el.classList.add('selected');
                 else el.classList.remove('selected');
@@ -644,15 +664,15 @@ function renderObjects() {
             const sX=e.clientX, sY=e.clientY;
             const initialPos = selectedIndices.map(i => ({idx: i, x: labelObjects[i].x_mm * PX_PER_MM, y: labelObjects[i].y_mm * PX_PER_MM}));
 
-            const move = (ev) => { 
+            const move = (ev) => {
                 const dx = (ev.clientX - sX) / zoomLevel;
                 const dy = (ev.clientY - sY) / zoomLevel;
-                
+
                 initialPos.forEach(p => {
                     const obj = labelObjects[p.idx];
                     obj.x_mm = (p.x + dx) / PX_PER_MM;
                     obj.y_mm = (p.y + dy) / PX_PER_MM;
-                    
+
                     // Live-Update der DIVs (optional, aber performanter für Feedback)
                     const el = document.querySelectorAll('.designer-object')[p.idx];
                     if (el) {
@@ -676,7 +696,7 @@ function addObject(t) {
     const maxY = Math.max(0, formatH - H);
     const offsetX = Math.min(n * STEP, maxX);
     const offsetY = Math.min(n * STEP, maxY);
-    labelObjects.push({type:t, x_mm: offsetX, y_mm: offsetY, width_mm:W, height_mm:H, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}});
+    labelObjects.push({type:t, x_mm: offsetX, y_mm: offsetY, width_mm:W, height_mm:H, rotation: 0, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}});
     selectedIndices = [labelObjects.length - 1];
     renderObjects();
 }
@@ -701,10 +721,11 @@ function editObject(idx) {
     document.getElementById('barcodeTypeGroup').style.display = o.type==='barcode'?'block':'none';
     document.getElementById('textOptionsGroup').style.display = o.type==='text'?'block':'none';
     document.getElementById('barcodeOptionsGroup').style.display = o.type==='barcode'?'block':'none';
-    
+
     document.getElementById('objWidth').value = o.width_mm;
     document.getElementById('objHeight').value = o.height_mm;
-    
+    document.getElementById('objRotation').value = o.rotation || 0;
+
     if(o.type==='text') {
         document.getElementById('objFontSize').value = o.properties.font_size||10;
         document.getElementById('objBold').checked = !!o.properties.bold;
@@ -727,7 +748,8 @@ function applyObjectProperties() {
     o.properties.content = document.getElementById('objContent').value;
     o.width_mm = parseFloat(document.getElementById('objWidth').value.replace(',', '.')) || o.width_mm;
     o.height_mm = parseFloat(document.getElementById('objHeight').value.replace(',', '.')) || o.height_mm;
-    
+    o.rotation = parseFloat(document.getElementById('objRotation').value) || 0;
+
     if(o.type==='text') {
         o.properties.font_size = document.getElementById('objFontSize').value;
         o.properties.bold = document.getElementById('objBold').checked;
@@ -753,7 +775,7 @@ function saveDesignerAndPrint() {
 function toggleAllRecords(checked) {
     const checkboxes = document.querySelectorAll('.record-select-checkbox');
     checkboxes.forEach(cb => cb.checked = checked);
-    
+
     const fd = new FormData();
     fd.append('action_all', '1');
     fd.append('project_id', <?= $projectId ?>);
@@ -762,27 +784,27 @@ function toggleAllRecords(checked) {
 }
 
 function saveFormat() { fetch('api_update_format.php', {method:'POST', body:new FormData(document.getElementById('formatForm'))}).then(()=>location.reload()); }
-function openPreview() { 
+function openPreview() {
     const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
-    saveDesigner(true).then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1&cal=` + cal, '_blank')); 
+    saveDesigner(true).then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1&cal=` + cal, '_blank'));
 }
-function applyTemplate(s) { 
+function applyTemplate(s) {
     if(!s.value) return; const t=JSON.parse(s.value); const f=document.getElementById('formatForm');
     const pId = <?= $projectId ?>;
-    
+
     // Template ID setzen
     f.querySelector(`[name="template_id_${pId}"]`).value = t.id;
-    f.querySelector(`[name="width_mm_${pId}"]`).value=t.width_mm; 
+    f.querySelector(`[name="width_mm_${pId}"]`).value=t.width_mm;
     f.querySelector(`[name="height_mm_${pId}"]`).value=t.height_mm;
-    f.querySelector(`[name="cols_${pId}"]`).value=t.cols; 
+    f.querySelector(`[name="cols_${pId}"]`).value=t.cols;
     f.querySelector(`[name="rows_${pId}"]`).value=t.rows;
-    f.querySelector(`[name="col_gap_mm_${pId}"]`).value=t.col_gap_mm || 0; 
+    f.querySelector(`[name="col_gap_mm_${pId}"]`).value=t.col_gap_mm || 0;
     f.querySelector(`[name="row_gap_mm_${pId}"]`).value=t.row_gap_mm || 0;
-    f.querySelector(`[name="margin_top_mm_${pId}"]`).value=t.margin_top_mm || 0; 
+    f.querySelector(`[name="margin_top_mm_${pId}"]`).value=t.margin_top_mm || 0;
     f.querySelector(`[name="margin_bottom_mm_${pId}"]`).value=t.margin_bottom_mm || 0;
-    f.querySelector(`[name="margin_left_mm_${pId}"]`).value=t.margin_left_mm || 0; 
+    f.querySelector(`[name="margin_left_mm_${pId}"]`).value=t.margin_left_mm || 0;
     f.querySelector(`[name="margin_right_mm_${pId}"]`).value=t.margin_right_mm || 0;
-    
+
     updateDesignerZoom();
     fetch('api_update_format.php', {method:'POST', body:new FormData(f)});
 }
@@ -791,6 +813,8 @@ function applyTemplate(s) {
 document.querySelectorAll('#formatForm input').forEach(inp => {
     inp.addEventListener('input', updateDesignerZoom);
 });
+
+function setObjRotation(deg) { document.getElementById('objRotation').value = deg; }
 
 // QR Code 1:1 Ratio Sync
 document.getElementById('objBarcodeType').addEventListener('change', function() {
@@ -811,7 +835,7 @@ document.getElementById('objHeight').addEventListener('input', function() {
 function alignObjects(type) {
     if (selectedIndices.length < 2) return;
     const targets = selectedIndices.map(idx => labelObjects[idx]);
-    
+
     if (type === 'left') {
         const minX = Math.min(...targets.map(o => o.x_mm));
         targets.forEach(o => o.x_mm = minX);
@@ -824,7 +848,7 @@ function alignObjects(type) {
         const last = targets[targets.length - 1];
         const totalHeightOfMiddle = targets.slice(0, -1).reduce((s, o) => s + o.height_mm, 0);
         const gap = (last.y_mm - first.y_mm - totalHeightOfMiddle) / (targets.length - 1);
-        
+
         let currentY = first.y_mm;
         for (let i = 1; i < targets.length - 1; i++) {
             currentY += targets[i-1].height_mm + gap;
@@ -838,7 +862,7 @@ function adjustSpacing(dir) {
     if (selectedIndices.length < 2) return;
     const targets = selectedIndices.map(idx => labelObjects[idx]);
     targets.sort((a, b) => a.y_mm - b.y_mm);
-    
+
     const step = 2 * dir; // 2mm
     for (let i = 1; i < targets.length; i++) {
         targets[i].y_mm += i * step;

@@ -41,15 +41,15 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $lines = explode("\n", str_replace("\r", "", $csvData));
     $headerLine = array_shift($lines);
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
-    
+
     foreach ($lines as $idx => $line) {
         $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? false;
         if (!$selected) continue;
-        
+
         $line = trim($line);
         if (!$line) continue;
         $row = str_getcsv($line, $delimiter, '"', '');
-        
+
         $selectedRecords[$idx] = [];
         foreach ($fields as $colIdx => $field) {
             $selectedRecords[$idx][$field['name']] = $row[$colIdx] ?? '';
@@ -151,7 +151,7 @@ foreach ($selectedRecords as $record) {
     <div class="row align-items-start">
         <div class="col-lg-6">
             <h2 class="mb-4">Druckkonfiguration</h2>
-            
+
             <?php if ($ean8Errors > 0): ?>
                 <div class="alert alert-warning border-warning bg-warning bg-opacity-10 text-dark rounded-4 mb-4 shadow-sm">
                     <div class="d-flex">
@@ -179,6 +179,12 @@ foreach ($selectedRecords as $record) {
                         <span id="startIndexLabel" style="display:none;">1</span>
                     </div>
                 </div>
+                <div class="card-footer border-0 pt-0 pb-3 px-3">
+                    <button class="btn btn-primary w-100 py-3" onclick="startPrinting()">
+                        <i class="bi bi-printer me-2"></i> Jetzt Drucken (PDF)
+                    </button>
+                </div>
+            </div>
                 <div class="card mb-4" style="display: none;">
             <?php else: ?>
                 <div class="card mb-4">
@@ -186,10 +192,10 @@ foreach ($selectedRecords as $record) {
                 <div class="card-body">
                     <h5 class="card-title mb-3">Starteinstellungen</h5>
                     <p class="text-secondary small">
-                        Wähle das Etikett auf dem Bogen aus, an dem der Druck beginnen soll. 
+                        Wähle das Etikett auf dem Bogen aus, an dem der Druck beginnen soll.
                         Dies ist nützlich, wenn du einen bereits teilweise bedruckten A4-Bogen verwendest.
                     </p>
-                    
+
                     <div class="alert alert-info py-2 small d-flex align-items-center">
                         <i class="bi bi-info-circle-fill me-2"></i>
                         <span>Papier-Startposition: <strong>Aufkleber Nr. <span id="startIndexLabel">1</span></strong></span>
@@ -259,7 +265,7 @@ let startIndex = 1;
 function setStartIndex(idx) {
     startIndex = idx;
     document.getElementById('startIndexLabel').innerText = idx;
-    
+
     // UI Update
     document.querySelectorAll('.label-cell').forEach(el => {
         const elIdx = parseInt(el.getAttribute('data-index'));

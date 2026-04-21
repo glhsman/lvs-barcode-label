@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
 
         // 2. Neue CSV einlesen
         $csvData = file_get_contents($file);
-        
+
         // Erkennung der Kodierung (Windows-1252 ist bei CSV aus Excel oft Standard)
         $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
         if ($encoding !== 'UTF-8') {
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
         foreach ($header as $index => $colName) {
             $colName = trim($colName);
             if (empty($colName)) $colName = "Spalte " . ($index + 1);
-            
+
             $stmt = $pdo->prepare("INSERT INTO project_fields (project_id, name, position) VALUES (?, ?, ?)");
             $stmt->execute([$projectId, $colName, $index]);
             $fieldIds[$index] = $pdo->lastInsertId();
@@ -50,9 +50,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
         // 4. In die Session laden
         $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
         $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig nichts selektiert
-        
+
+        // 5. Dateinamen am Projekt speichern
+        $csvFilename = basename($_FILES['csv_file']['name']);
+        $pdo->prepare("UPDATE projects SET csv_filename = ? WHERE id = ?")->execute([$csvFilename, $projectId]);
+
         $pdo->commit();
-        
+
         // Nach erfolgreichem Reload sofort zurück zum Projekt
         header("Location: project_view.php?id={$projectId}");
         exit;

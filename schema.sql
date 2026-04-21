@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS projects (
     location_id INT NOT NULL,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
+    csv_filename VARCHAR(255) NULL,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
     modified_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE CASCADE,
