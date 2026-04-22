@@ -60,7 +60,7 @@ if ($locationId) {
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 
 <nav class="navbar navbar-expand-lg navbar-dark mb-4">
     <div class="container">
@@ -71,8 +71,9 @@ if ($locationId) {
             <span>BARCODE SYSTEM</span>
         </a>
         <div class="ms-auto d-flex align-items-center">
-            <a href="admin/index.php" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm text-secondary me-2"><i class="bi bi-gear me-1"></i> Admin</a>
-            <a href="handbuch.html" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
+            <a href="admin/index.php" class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm border-danger me-2"><i class="bi bi-gear me-1"></i> Admin</a>
+            <a href="handbuch.html" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
+            <a href="Online-Barcode-System.pdf" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-2"><i class="bi bi-file-earmark-pdf me-1"></i> Anleitung (PDF)</a>
         </div>
     </div>
 </nav>
@@ -210,9 +211,9 @@ if ($locationId) {
     </div>
 </div>
 
-<footer class="text-center py-4 mt-2" style="font-size: 0.8rem; color: #64748b;">
-    <p class="mb-1">© 2026 Drinkport KG - Barcode & Etiketten-System. <a href="mailto:it-service@drinkport.de?subject=Unterst%C3%BCtzung%20f%C3%BCr%20das%20Barcode-Tool%20ben%C3%B6tigt&body=...%7Bbitte%20beschreiben%20Sie%20ihr%20Problem%7D..." class="text-secondary">IT-Support</a> kontaktieren bei Fragen zur Einrichtung.</p>
-    <div style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.7.0</div>
+<footer class="text-center py-5 mt-auto" style="font-size: 0.95rem; color: #cbd5e1; border-top: 1px solid #334155; background-color: #1e293b;">
+    <p class="mb-1">© 2026 Drinkport KG - Barcode & Etiketten-System. <a href="mailto:it-service@drinkport.de?subject=Unterst%C3%BCtzung%20f%C3%BCr%20das%20Barcode-Tool%20ben%C3%B6tigt&body=...%7Bbitte%20beschreiben%20Sie%20ihr%20Problem%7D..." style="color: #60a5fa;">IT-Support</a> kontaktieren bei Fragen zur Einrichtung.</p>
+    <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.4rem;">UI-System-STABLE v2.7.0</div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,8 +1,19 @@
-# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.7.0
+# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.7.1
 
 Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
 
 Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+
+---
+
+## ✨ Neuheiten in Version 2.7.1
+Dieses Update verbessert die Bedienbarkeit und ergänzt Dokumentation:
+
+*   **↩️ Design-Wiederherstellen:** Neuer „Wiederherstellen"-Button im Visual Designer stellt den zuletzt gespeicherten Stand aus der Datenbank wieder her — ohne Seitenreload, mit Bestätigungsdialog.
+*   **📄 PDF-Anleitung verlinkt:** Die Offline-Anleitung (`Online-Barcode-System.pdf`) ist jetzt als direkter Download-Button in der Navigationsleiste (Index & Designer) verknüpft — gleichwertig neben dem Online-Handbuch.
+*   **🔴 Admin-Button:** Der Admin-Navigationsbutton erscheint nun in Rot (analog zum Logout-Button im Admin-Bereich) für eine klarere visuelle Trennung.
+*   **🔗 Hilfe-Links in neuem Tab:** Handbuch und PDF-Anleitung öffnen sich jetzt immer in einem neuen Browser-Tab.
+*   **🙈 .gitignore erweitert:** `images/` und `*.docx` werden nun vom Versionskontrollsystem ausgeschlossen.
 
 ---
 

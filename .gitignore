@@ -14,6 +14,10 @@ sync.ffs_db
 *.csv
 uploads/
 
+# Medien & Dokumente
+images/
+*.docx
+
 # OS-Specific
 .DS_Store
 Thumbs.db
@@ -22,3 +26,4 @@ Thumbs.db
 .vscode/
 .idea/
 .git/
+.agents/

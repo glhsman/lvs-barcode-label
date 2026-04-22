@@ -88,7 +88,8 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 </div>
                 <span>BARCODE SYSTEM</span>
             </a>
-            <a href="handbuch.html" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-3 d-none d-lg-inline-block"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
+            <a href="handbuch.html" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-3 d-none d-lg-inline-block"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
+            <a href="Online-Barcode-System.pdf" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-2 d-none d-lg-inline-block"><i class="bi bi-file-earmark-pdf me-1"></i> Anleitung (PDF)</a>
         </div>
         <div class="ms-auto d-flex align-items-center">
             <div class="text-end me-4 d-none d-md-block">
@@ -243,6 +244,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                     <button class="btn btn-dark px-2" onclick="resetZoom()" title="An Bereich anpassen"><i class="bi bi-fullscreen"></i></button>
                                 </div>
                                 <button class="btn btn-sm btn-outline-info px-3 me-2 border-info" onclick="openPreview()"><i class="bi bi-eye me-1"></i> Vorschau</button>
+                                <button class="btn btn-sm btn-outline-warning px-3 me-2" onclick="restoreDesign()" title="Letzten gespeicherten Stand aus der Datenbank wiederherstellen"><i class="bi bi-arrow-counterclockwise me-1"></i> Wiederherstellen</button>
                                 <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="saveDesigner()"><i class="bi bi-cloud-check me-1"></i> Design speichern</button>
                             </div>
                         </div>
@@ -808,6 +810,18 @@ function applyObjectProperties() {
 function saveDesigner(silent = false) {
     const fd = new FormData(); fd.append('project_id', <?= $projectId ?>); fd.append('objects', JSON.stringify(labelObjects));
     return fetch('api_save_objects.php', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.success && !silent) alert('Design erfolgreich gespeichert!'); });
+}
+function restoreDesign() {
+    if (!confirm('Möchten Sie den letzten gespeicherten Stand aus der Datenbank wirklich wiederherstellen? Alle ungespeicherten Änderungen gehen verloren.')) return;
+    fetch('api_get_objects.php?project_id=<?= $projectId ?>')
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success) { alert('Fehler beim Wiederherstellen: ' + (d.message || 'Unbekannter Fehler')); return; }
+            labelObjects = d.objects.map(o => { if (typeof o.properties === 'string') try { o.properties = JSON.parse(o.properties); } catch(e) { o.properties = {}; } return o; });
+            selectedIndices = [];
+            renderObjects();
+        })
+        .catch(() => alert('Verbindungsfehler beim Wiederherstellen.'));
 }
 function saveDesignerAndPrint() {
     const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
