@@ -16,6 +16,8 @@ uploads/
 
 # Medien & Dokumente
 images/
+*.pdf
+!Online-Barcode-System.pdf
 *.docx
 *.mp3
 *.m4a
