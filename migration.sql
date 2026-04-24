@@ -7,6 +7,8 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS csv_filename VARCHAR(255) NULL AFT
 -- Spalten für Kalibrierung und Skalierung (falls noch nicht vorhanden)
 ALTER TABLE label_formats ADD COLUMN IF NOT EXISTS show_calibration_border TINYINT(1) DEFAULT 0;
 ALTER TABLE label_formats ADD COLUMN IF NOT EXISTS print_scale FLOAT NOT NULL DEFAULT 100.0;
+ALTER TABLE label_formats ADD COLUMN IF NOT EXISTS media_type ENUM('sheet','roll') NOT NULL DEFAULT 'sheet';
+ALTER TABLE global_label_templates ADD COLUMN IF NOT EXISTS media_type ENUM('sheet','roll') NOT NULL DEFAULT 'sheet';
 
 -- Standort-Tabelle erstellen
 CREATE TABLE IF NOT EXISTS locations (
@@ -52,5 +54,9 @@ CREATE TABLE IF NOT EXISTS global_label_templates (
     `rows`           INT   NOT NULL DEFAULT 1,
     col_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
     row_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
+    media_type       ENUM('sheet','roll') NOT NULL DEFAULT 'sheet',
     UNIQUE INDEX idx_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- media_type nochmals per ALTER sicherstellen (falls Tabelle schon ohne die Spalte existierte)
+ALTER TABLE global_label_templates ADD COLUMN IF NOT EXISTS media_type ENUM('sheet','roll') NOT NULL DEFAULT 'sheet';

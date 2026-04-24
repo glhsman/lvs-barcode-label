@@ -90,6 +90,12 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             <a href="handbuch.html" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-3 d-none d-lg-inline-block"><i class="bi bi-question-circle me-1"></i> Hilfe</a>
             <a href="Online-Barcode-System.pdf" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm border-info text-info ms-2 d-none d-lg-inline-block"><i class="bi bi-file-earmark-pdf me-1"></i> Anleitung (PDF)</a>
         </div>
+        <div class="flex-grow-1 d-none d-lg-flex justify-content-center px-3">
+            <div class="px-4 py-2 rounded-3 fw-semibold text-center"
+                 style="min-width: 320px; max-width: 560px; border: 2px solid #84cc16; color: #d9f99d; background: rgba(132, 204, 22, 0.08); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <?= htmlspecialchars($project['name']) ?>
+            </div>
+        </div>
         <div class="ms-auto d-flex align-items-center">
             <div class="text-end me-4 d-none d-md-block">
                 <div class="small text-muted fw-bold" style="font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase;">Aktiv</div>
@@ -110,7 +116,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 <select id="templateSelect" class="form-select form-select-sm bg-dark text-light border-secondary mb-3" onchange="applyTemplate(this)">
                     <option value="">-- Vorlage wählen --</option>
                     <?php foreach($globalTemplates as $t): ?>
-                        <option value='<?= json_encode($t)?>' <?= ($format['template_id'] == $t['id']) ? 'selected' : '' ?>>
+                        <option value='<?= (int)$t['id'] ?>' <?= ($format['template_id'] == $t['id']) ? 'selected' : '' ?>>
                             <?= htmlspecialchars($t['name'])?>
                         </option>
                     <?php endforeach; ?>
@@ -137,6 +143,14 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                         <div class="col-3"><input type="number" step="0.1" name="margin_bottom_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_bottom_mm'] ?>"></div>
                         <div class="col-3"><input type="number" step="0.1" name="margin_left_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_left_mm'] ?>"></div>
                         <div class="col-3"><input type="number" step="0.1" name="margin_right_mm_<?= $projectId ?>" class="form-control form-control-sm bg-dark text-light border-secondary px-1" value="<?= (float)$format['margin_right_mm'] ?>"></div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-12">
+                            <label class="form-label-sm">Medientyp</label>
+                            <input type="hidden" name="media_type_<?= $projectId ?>" value="<?= (($format['media_type'] ?? 'sheet') === 'roll') ? 'roll' : 'sheet' ?>">
+                            <input type="text" id="mediaTypeReadonly" class="form-control form-control-sm bg-dark text-light border-secondary px-2" value="<?= (($format['media_type'] ?? 'sheet') === 'roll') ? 'Rolle (aus Vorlage)' : 'Bogen (aus Vorlage)' ?>" readonly>
+                            <div class="form-text text-secondary small" style="font-size:0.68rem;">Wird zentral in der Admin-Vorlage gepflegt.</div>
+                        </div>
                     </div>
                     <div class="row g-2 mb-3 align-items-end">
                         <div class="col-7">
@@ -227,6 +241,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div class="btn-group btn-group-sm me-2 border border-secondary rounded overflow-hidden">
                                     <button class="btn btn-dark" onclick="addObject('text')"><i class="bi bi-plus me-1"></i> Text</button>
                                     <button class="btn btn-dark" onclick="addObject('barcode')"><i class="bi bi-plus me-1"></i> Barcode</button>
+                                    <button class="btn btn-dark" onclick="addObject('image')"><i class="bi bi-plus me-1"></i> Bild</button>
                                 </div>
                                 <button class="btn btn-sm btn-outline-secondary px-3 me-2" onclick="editObject(selectedIndices[0])" title="Eigenschaften des gewählten Objekts bearbeiten" id="btnEditSelected" disabled><i class="bi bi-pencil me-1"></i> Bearbeiten</button>
                                 <div class="btn-group btn-group-sm me-3 border border-secondary rounded overflow-hidden">
@@ -257,7 +272,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.7.2-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.8.0-STABLE</div>
                         </div>
                     </div>
                 </div>
@@ -274,7 +289,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4">
-            <div class="mb-4">
+            <div class="mb-4" id="objContentGroup">
                 <label class="form-label-sm mb-2">Inhalt / Platzhalter</label>
                 <textarea class="form-control bg-dark text-light border-secondary mb-3" id="objContent" rows="3"></textarea>
                 <div class="small text-muted mb-2">Schnell-Einfügen (Felder):</div>
@@ -338,10 +353,58 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                     <label class="form-check-label small" for="objShowHTR">Klartextzeile sichtbar</label>
                 </div>
             </div>
+            <div id="imageOptionsGroup" class="mt-4 pt-3 border-top border-secondary" style="display:none;">
+                <div class="mb-3 text-center" style="background:#0f172a; border-radius:8px; padding:8px; min-height:60px;">
+                    <img id="objImagePreview" src="" alt="" style="max-width:100%; max-height:100px; object-fit:contain;">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="objImageLockRatio" checked>
+                    <label class="form-check-label small" for="objImageLockRatio"><i class="bi bi-lock-fill me-1 text-warning"></i>Seitenverhältnis sperren</label>
+                </div>
+                <label class="form-label-sm mb-1">Bild ersetzen</label>
+                <div class="alert alert-warning d-flex align-items-center gap-2 py-2 px-3 mb-2" role="alert" style="font-size:0.78rem; border-radius:8px;">
+                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                    <span>Nur <strong>JPG</strong> / <strong>PNG</strong> &mdash; max. <strong>200 KB</strong></span>
+                </div>
+                <input type="file" class="form-control form-control-sm bg-dark text-light border-secondary" id="objImageFile" accept="image/jpeg,image/png">
+                <div id="objImageError" class="text-danger small mt-1" style="display:none;"></div>
+            </div>
         </div>
         <div class="modal-footer border-top-0 pt-0">
             <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
             <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill" onclick="applyObjectProperties()">Änderungen übernehmen</button>
+        </div>
+    </div></div>
+</div>
+
+<!-- Modal: Neues Bild einfügen -->
+<div class="modal fade" id="imageUploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content bg-dark text-light border-secondary shadow-lg" style="border-radius: 20px; border: 1px solid rgba(255,255,255,0.1) !important;">
+        <div class="modal-header border-bottom-0 pb-0">
+            <h6 class="modal-title fw-bold"><i class="bi bi-image me-2 text-primary"></i>BILD EINFÜGEN</h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+            <div class="alert alert-info d-flex align-items-start gap-2 py-3 px-3 mb-4" role="alert" style="font-size:0.83rem; border-radius:10px;">
+                <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
+                <div>
+                    <strong>Erlaubte Formate: JPG und PNG</strong><br>
+                    <strong>Maximale Dateigröße: 200 KB</strong><br>
+                    <span class="text-light opacity-75 small">Geeignet für Produktbilder, Pfeile und Hinweis-Piktogramme.</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label-sm mb-1">Bilddatei auswählen</label>
+                <input type="file" class="form-control bg-dark text-light border-secondary" id="newImageFile" accept="image/jpeg,image/png">
+                <div id="newImageError" class="text-danger small mt-2" style="display:none;"></div>
+            </div>
+            <div id="newImagePreviewBox" class="text-center mt-3" style="background:#0f172a; border-radius:8px; padding:10px; display:none;">
+                <img id="newImagePreview" src="" alt="Vorschau" style="max-width:100%; max-height:160px; object-fit:contain;">
+            </div>
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
+            <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill" id="btnConfirmAddImage" onclick="confirmAddImage()" disabled>Einfügen</button>
         </div>
     </div></div>
 </div>
@@ -591,6 +654,19 @@ function renderObjects() {
             if (ta === 'left') inner.style.justifyContent = 'flex-start';
             if (ta === 'right') inner.style.justifyContent = 'flex-end';
         }
+        else if(obj.type==='image') {
+            if(obj.properties.image_data) {
+                const img = document.createElement('img');
+                img.src = obj.properties.image_data;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                img.style.display = 'block';
+                inner.appendChild(img);
+            } else {
+                inner.innerHTML = '<span style="font-size:9px; color:#94a3b8;"><i class="bi bi-image"></i> Kein Bild</span>';
+            }
+        }
         else {
             const c = document.createElement('canvas');
             const bType = obj.properties.barcode_type||'code128';
@@ -666,6 +742,13 @@ function renderObjects() {
                         else if(pos === 'bl') { nx = iX + (iW - newSize); nw = newSize; nh = newSize; }
                     }
 
+                    if(obj.type === 'image' && obj.properties.lock_ratio !== false) {
+                        const r = obj.properties.ratio || 1;
+                        nh = nw / r;
+                        if(pos.includes('t')) ny = iY + iH - nh;
+                        if(nh < 3) { nh = 3; nw = nh * r; if(pos.includes('l')) nx = iX + iW - nw; }
+                    }
+
                     obj.width_mm = nw; obj.height_mm = nh;
                     obj.x_mm = nx; obj.y_mm = ny;
 
@@ -733,6 +816,15 @@ function renderObjects() {
     });
 }
 function addObject(t) {
+    if (t === 'image') {
+        document.getElementById('newImageFile').value = '';
+        document.getElementById('newImageError').style.display = 'none';
+        document.getElementById('newImagePreviewBox').style.display = 'none';
+        document.getElementById('newImagePreview').src = '';
+        document.getElementById('btnConfirmAddImage').disabled = true;
+        new bootstrap.Modal(document.getElementById('imageUploadModal')).show();
+        return;
+    }
     const STEP = 5, W = 40, H = 15;
     const n = labelObjects.length;
     const maxX = Math.max(0, formatW - W);
@@ -741,6 +833,24 @@ function addObject(t) {
     const offsetY = Math.min(n * STEP, maxY);
     labelObjects.push({type:t, x_mm: offsetX, y_mm: offsetY, width_mm:W, height_mm:H, rotation: 0, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}});
     selectedIndices = [labelObjects.length - 1];
+    renderObjects();
+}
+function confirmAddImage() {
+    const imgEl = document.getElementById('newImagePreview');
+    const imgData = imgEl.src;
+    if (!imgData || imgData === window.location.href) return;
+    const STEP = 5, W = 20;
+    const n = labelObjects.length;
+    const ratio = (imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0)
+        ? imgEl.naturalWidth / imgEl.naturalHeight : 1;
+    const H = parseFloat((W / ratio).toFixed(2));
+    const maxX = Math.max(0, formatW - W);
+    const maxY = Math.max(0, formatH - H);
+    const offsetX = Math.min(n * STEP, maxX);
+    const offsetY = Math.min(n * STEP, maxY);
+    labelObjects.push({type:'image', x_mm: offsetX, y_mm: offsetY, width_mm: W, height_mm: H, rotation: 0, properties:{image_data: imgData, lock_ratio: true, ratio: ratio}});
+    selectedIndices = [labelObjects.length - 1];
+    bootstrap.Modal.getInstance(document.getElementById('imageUploadModal')).hide();
     renderObjects();
 }
 function deleteObject(idx) { labelObjects.splice(idx, 1); selectedIndices = selectedIndices.filter(i => i !== idx).map(i => i > idx ? i - 1 : i); renderObjects(); }
@@ -756,14 +866,29 @@ function sendBackward(idx) {
     selectedIndices = selectedIndices.map(i => i === idx ? idx-1 : i === idx-1 ? idx : i);
     renderObjects();
 }
+let pendingImageReplacement = null;
+let pendingImageRatio = null;
 function editObject(idx) {
     if (!selectedIndices.includes(idx)) selectedIndices = [idx];
     const o = labelObjects[idx];
-    document.getElementById('objContent').value = o.properties.content;
+    document.getElementById('objContent').value = o.properties.content || '';
+    document.getElementById('objContentGroup').style.display = o.type==='image'?'none':'block';
     document.getElementById('fontSizeGroup').style.display = o.type==='text'?'block':'none';
     document.getElementById('barcodeTypeGroup').style.display = o.type==='barcode'?'block':'none';
     document.getElementById('textOptionsGroup').style.display = o.type==='text'?'block':'none';
     document.getElementById('barcodeOptionsGroup').style.display = o.type==='barcode'?'block':'none';
+    document.getElementById('imageOptionsGroup').style.display = o.type==='image'?'block':'none';
+    if (o.type === 'image') {
+        pendingImageReplacement = null;
+        pendingImageRatio = null;
+        if (!o.properties.ratio && o.width_mm > 0 && o.height_mm > 0) {
+            o.properties.ratio = o.width_mm / o.height_mm;
+        }
+        document.getElementById('objImagePreview').src = o.properties.image_data || '';
+        document.getElementById('objImageFile').value = '';
+        document.getElementById('objImageError').style.display = 'none';
+        document.getElementById('objImageLockRatio').checked = o.properties.lock_ratio !== false;
+    }
 
     document.getElementById('objWidth').value = o.width_mm;
     document.getElementById('objHeight').value = o.height_mm;
@@ -799,9 +924,16 @@ function applyObjectProperties() {
         o.properties.italic = document.getElementById('objItalic').checked;
         o.properties.vertical = document.getElementById('objVertical').checked;
         o.properties.text_align = document.querySelector('input[name="objTextAlign"]:checked').value;
-    } else {
+    } else if(o.type==='barcode') {
         o.properties.barcode_type = document.getElementById('objBarcodeType').value;
         o.properties.show_htr = document.getElementById('objShowHTR').checked;
+    } else if(o.type==='image') {
+        if (pendingImageReplacement) {
+            o.properties.image_data = pendingImageReplacement;
+            pendingImageReplacement = null;
+            if (pendingImageRatio) { o.properties.ratio = pendingImageRatio; pendingImageRatio = null; }
+        }
+        o.properties.lock_ratio = document.getElementById('objImageLockRatio').checked;
     }
     bootstrap.Modal.getInstance(document.getElementById('objectModal')).hide();
     renderObjects();
@@ -824,7 +956,9 @@ function restoreDesign() {
 }
 function saveDesignerAndPrint() {
     const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
-    saveDesigner(true).then(() => { window.location.href = 'print_labels.php?id=<?= $projectId ?>&cal=' + cal; });
+    persistFormat()
+        .then(() => saveDesigner(true))
+        .then(() => { window.location.href = 'print_labels.php?id=<?= $projectId ?>&cal=' + cal; });
 }
 
 function toggleAllRecords(checked) {
@@ -838,53 +972,130 @@ function toggleAllRecords(checked) {
     fetch('api_update_selection.php', { method: 'POST', body: fd });
 }
 
-function saveFormat() { fetch('api_update_format.php', {method:'POST', body:new FormData(document.getElementById('formatForm'))}).then(()=>location.reload()); }
+function persistFormat() {
+    clearTimeout(_formatSaveTimer);
+    return fetch('api_update_format.php', {method:'POST', body:new FormData(document.getElementById('formatForm'))})
+        .then(r => r.json())
+        .then(d => {
+            if (!d || d.success !== true) {
+                throw new Error((d && d.message) ? d.message : 'Format konnte nicht gespeichert werden.');
+            }
+            return d;
+        });
+}
+function saveFormat() {
+    persistFormat()
+        .then(() => location.reload())
+        .catch(e => alert('Fehler beim Speichern des Formats: ' + (e.message || e)));
+}
 function openPreview() {
     const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
-    saveDesigner(true).then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1&cal=` + cal, '_blank'));
+    persistFormat()
+        .then(() => saveDesigner(true))
+        .then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1&cal=` + cal, '_blank'))
+        .catch(e => alert('Fehler vor der Vorschau: ' + (e.message || e)));
 }
 function applyTemplate(s) {
-    if(!s.value) return; const t=JSON.parse(s.value); const f=document.getElementById('formatForm');
+    if (!s.value) return;
+    const tplId = parseInt(s.value);
     const pId = <?= $projectId ?>;
+    const f = document.getElementById('formatForm');
 
-    // Template ID setzen
-    f.querySelector(`[name="template_id_${pId}"]`).value = t.id;
-    f.querySelector(`[name="width_mm_${pId}"]`).value=t.width_mm;
-    f.querySelector(`[name="height_mm_${pId}"]`).value=t.height_mm;
-    f.querySelector(`[name="cols_${pId}"]`).value=t.cols;
-    f.querySelector(`[name="rows_${pId}"]`).value=t.rows;
-    f.querySelector(`[name="col_gap_mm_${pId}"]`).value=t.col_gap_mm || 0;
-    f.querySelector(`[name="row_gap_mm_${pId}"]`).value=t.row_gap_mm || 0;
-    f.querySelector(`[name="margin_top_mm_${pId}"]`).value=t.margin_top_mm || 0;
-    f.querySelector(`[name="margin_bottom_mm_${pId}"]`).value=t.margin_bottom_mm || 0;
-    f.querySelector(`[name="margin_left_mm_${pId}"]`).value=t.margin_left_mm || 0;
-    f.querySelector(`[name="margin_right_mm_${pId}"]`).value=t.margin_right_mm || 0;
-
-    updateDesignerZoom();
-    fetch('api_update_format.php', {method:'POST', body:new FormData(f)});
+    const fd = new FormData();
+    fd.append('action', 'load');
+    fd.append('id', tplId);
+    fetch('api_get_template.php', {method: 'POST', body: fd})
+        .then(r => r.json())
+        .then(t => {
+            if (!t || !t.id) return;
+            f.querySelector(`[name="template_id_${pId}"]`).value = t.id;
+            f.querySelector(`[name="width_mm_${pId}"]`).value = t.width_mm;
+            f.querySelector(`[name="height_mm_${pId}"]`).value = t.height_mm;
+            f.querySelector(`[name="cols_${pId}"]`).value = t.cols;
+            f.querySelector(`[name="rows_${pId}"]`).value = t.rows;
+            f.querySelector(`[name="col_gap_mm_${pId}"]`).value = t.col_gap_mm || 0;
+            f.querySelector(`[name="row_gap_mm_${pId}"]`).value = t.row_gap_mm || 0;
+            f.querySelector(`[name="margin_top_mm_${pId}"]`).value = t.margin_top_mm || 0;
+            f.querySelector(`[name="margin_bottom_mm_${pId}"]`).value = t.margin_bottom_mm || 0;
+            f.querySelector(`[name="margin_left_mm_${pId}"]`).value = t.margin_left_mm || 0;
+            f.querySelector(`[name="margin_right_mm_${pId}"]`).value = t.margin_right_mm || 0;
+            const mtSel = f.querySelector(`[name="media_type_${pId}"]`);
+            if (mtSel) mtSel.value = t.media_type || 'sheet';
+            const mtReadonly = document.getElementById('mediaTypeReadonly');
+            if (mtReadonly) mtReadonly.value = ((t.media_type || 'sheet') === 'roll') ? 'Rolle (aus Vorlage)' : 'Bogen (aus Vorlage)';
+            updateDesignerZoom();
+            persistFormat().catch(e => alert('Fehler beim Übernehmen der Vorlage: ' + (e.message || e)));
+        });
 }
 
-// Live-Update bei Tippen
+// Live-Update + Auto-Save bei Änderungen
+let _formatSaveTimer = null;
+function scheduleFormatSave() {
+    clearTimeout(_formatSaveTimer);
+    _formatSaveTimer = setTimeout(() => {
+        persistFormat().catch(() => {});
+    }, 600);
+}
 document.querySelectorAll('#formatForm input').forEach(inp => {
-    inp.addEventListener('input', updateDesignerZoom);
+    inp.addEventListener('input', () => { updateDesignerZoom(); scheduleFormatSave(); });
+});
+document.querySelectorAll('#formatForm select').forEach(sel => {
+    sel.addEventListener('change', () => { updateDesignerZoom(); scheduleFormatSave(); });
 });
 
 function setObjRotation(deg) { document.getElementById('objRotation').value = deg; }
 
-// QR Code 1:1 Ratio Sync
+// Synchronisiert Höhe/Breite im Modal (QR und Bild mit Ratio-Lock)
+let dimSyncInProgress = false;
+function syncObjectModalDimensions(changedField) {
+    if (dimSyncInProgress) return;
+
+    const idx = selectedIndices[0];
+    if (idx === undefined || !labelObjects[idx]) return;
+
+    const obj = labelObjects[idx];
+    const widthEl = document.getElementById('objWidth');
+    const heightEl = document.getElementById('objHeight');
+    const widthVal = parseFloat((widthEl.value || '').replace(',', '.'));
+    const heightVal = parseFloat((heightEl.value || '').replace(',', '.'));
+
+    if (!Number.isFinite(widthVal) || !Number.isFinite(heightVal) || widthVal <= 0 || heightVal <= 0) return;
+
+    dimSyncInProgress = true;
+    try {
+        if (obj.type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
+            if (changedField === 'width') heightEl.value = widthEl.value;
+            else widthEl.value = heightEl.value;
+        }
+
+        if (obj.type === 'image' && document.getElementById('objImageLockRatio').checked) {
+            const ratio = obj.properties.ratio || (obj.width_mm > 0 && obj.height_mm > 0 ? obj.width_mm / obj.height_mm : 1);
+            if (ratio > 0) {
+                if (changedField === 'width') {
+                    const newHeight = widthVal / ratio;
+                    heightEl.value = Number.isFinite(newHeight) ? newHeight.toFixed(2) : heightEl.value;
+                } else {
+                    const newWidth = heightVal * ratio;
+                    widthEl.value = Number.isFinite(newWidth) ? newWidth.toFixed(2) : widthEl.value;
+                }
+            }
+        }
+    } finally {
+        dimSyncInProgress = false;
+    }
+}
+
 document.getElementById('objBarcodeType').addEventListener('change', function() {
-    if (this.value === 'qr') document.getElementById('objHeight').value = document.getElementById('objWidth').value;
+    if (this.value === 'qr') syncObjectModalDimensions('width');
+});
+document.getElementById('objImageLockRatio').addEventListener('change', function() {
+    if (this.checked) syncObjectModalDimensions('width');
 });
 document.getElementById('objWidth').addEventListener('input', function() {
-    if (labelObjects[selectedIdx] && labelObjects[selectedIdx].type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
-        document.getElementById('objHeight').value = this.value;
-    }
+    syncObjectModalDimensions('width');
 });
 document.getElementById('objHeight').addEventListener('input', function() {
-    const idx = selectedIndices[0];
-    if (idx !== undefined && labelObjects[idx].type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
-        document.getElementById('objWidth').value = this.value;
-    }
+    syncObjectModalDimensions('height');
 });
 
 function alignObjects(type) {
@@ -924,6 +1135,68 @@ function adjustSpacing(dir) {
     }
     renderObjects();
 }
+
+// Datei-Validierung für neues Bild (Upload-Modal)
+document.getElementById('newImageFile').addEventListener('change', function() {
+    const file = this.files[0];
+    const errorEl = document.getElementById('newImageError');
+    const previewBox = document.getElementById('newImagePreviewBox');
+    const preview = document.getElementById('newImagePreview');
+    const btn = document.getElementById('btnConfirmAddImage');
+    errorEl.style.display = 'none';
+    previewBox.style.display = 'none';
+    btn.disabled = true;
+    if (!file) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        errorEl.textContent = 'Fehler: Nur JPG und PNG sind erlaubt.';
+        errorEl.style.display = 'block';
+        this.value = '';
+        return;
+    }
+    if (file.size > 204800) {
+        errorEl.textContent = 'Datei zu groß (' + Math.round(file.size / 1024) + ' KB). Maximum: 200 KB.';
+        errorEl.style.display = 'block';
+        this.value = '';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        preview.src = e.target.result;
+        previewBox.style.display = 'block';
+        btn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+});
+
+// Datei-Validierung für Bild-Ersatz (Edit-Modal)
+document.getElementById('objImageFile').addEventListener('change', function() {
+    const file = this.files[0];
+    const errorEl = document.getElementById('objImageError');
+    pendingImageReplacement = null;
+    errorEl.style.display = 'none';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        errorEl.textContent = 'Fehler: Nur JPG und PNG sind erlaubt.';
+        errorEl.style.display = 'block';
+        this.value = '';
+        return;
+    }
+    if (file.size > 204800) {
+        errorEl.textContent = 'Datei zu groß (' + Math.round(file.size / 1024) + ' KB). Maximum: 200 KB.';
+        errorEl.style.display = 'block';
+        this.value = '';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        pendingImageReplacement = e.target.result;
+        document.getElementById('objImagePreview').src = e.target.result;
+        const tmp = new Image();
+        tmp.onload = () => { if (tmp.naturalWidth > 0) pendingImageRatio = tmp.naturalWidth / tmp.naturalHeight; };
+        tmp.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+});
 </script>
 </body>
 </html>

@@ -24,6 +24,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_project_id']))
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['duplicate_project_id'])) {
+    $dupId    = (int)($_POST['duplicate_project_id']);
+    $dupName  = trim($_POST['duplicate_new_name'] ?? '');
+    $dupLocId = (int)($_POST['duplicate_location_id'] ?? $_GET['location_id'] ?? 0);
+
+    if ($dupId > 0 && $dupName !== '' && $dupLocId > 0) {
+        $srcStmt = $pdo->prepare("SELECT * FROM projects WHERE id = ?");
+        $srcStmt->execute([$dupId]);
+        $srcProject = $srcStmt->fetch();
+
+        if ($srcProject) {
+            $srcFmtStmt = $pdo->prepare("SELECT * FROM label_formats WHERE project_id = ?");
+            $srcFmtStmt->execute([$dupId]);
+            $srcFormat = $srcFmtStmt->fetch();
+
+            $srcObjStmt = $pdo->prepare("SELECT * FROM label_objects WHERE project_id = ? ORDER BY z_order ASC");
+            $srcObjStmt->execute([$dupId]);
+            $srcObjects = $srcObjStmt->fetchAll();
+
+            $srcFldStmt = $pdo->prepare("SELECT * FROM project_fields WHERE project_id = ? ORDER BY position ASC");
+            $srcFldStmt->execute([$dupId]);
+            $srcFields = $srcFldStmt->fetchAll();
+
+            try {
+                $pdo->beginTransaction();
+
+                $pdo->prepare("INSERT INTO projects (location_id, name, csv_filename) VALUES (?, ?, ?)")
+                    ->execute([$srcProject['location_id'], $dupName, $srcProject['csv_filename']]);
+                $newId = (int)$pdo->lastInsertId();
+
+                if ($srcFormat) {
+                    $pdo->prepare("INSERT INTO label_formats
+                        (project_id, template_id, manufacturer, product_name,
+                         width_mm, height_mm, margin_top_mm, margin_bottom_mm,
+                                                 margin_left_mm, margin_right_mm, `cols`, `rows`,
+                         col_gap_mm, row_gap_mm, show_calibration_border, print_scale, media_type)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+                        ->execute([
+                            $newId, $srcFormat['template_id'] ?? null,
+                            $srcFormat['manufacturer'] ?? null, $srcFormat['product_name'] ?? null,
+                            $srcFormat['width_mm'], $srcFormat['height_mm'],
+                            $srcFormat['margin_top_mm'], $srcFormat['margin_bottom_mm'],
+                            $srcFormat['margin_left_mm'], $srcFormat['margin_right_mm'],
+                            $srcFormat['cols'], $srcFormat['rows'],
+                            $srcFormat['col_gap_mm'], $srcFormat['row_gap_mm'],
+                            $srcFormat['show_calibration_border'] ?? 0,
+                            $srcFormat['print_scale'] ?? 100.0,
+                            $srcFormat['media_type'] ?? 'sheet',
+                        ]);
+                }
+
+                $stmtF = $pdo->prepare("INSERT INTO project_fields (project_id, name, position) VALUES (?,?,?)");
+                foreach ($srcFields as $f) {
+                    $stmtF->execute([$newId, $f['name'], $f['position']]);
+                }
+
+                $stmtO = $pdo->prepare("INSERT INTO label_objects
+                    (project_id, type, x_mm, y_mm, width_mm, height_mm, rotation, z_order, properties)
+                    VALUES (?,?,?,?,?,?,?,?,?)");
+                foreach ($srcObjects as $o) {
+                    $stmtO->execute([
+                        $newId, $o['type'], $o['x_mm'], $o['y_mm'],
+                        $o['width_mm'], $o['height_mm'], $o['rotation'], $o['z_order'], $o['properties'],
+                    ]);
+                }
+
+                $pdo->commit();
+                header("Location: index.php?location_id=" . $dupLocId);
+                exit;
+
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                die("<pre style='background:#1e1e1e;color:#f87171;padding:20px;font-size:13px;'>"
+                    . "<b>Fehler beim Duplizieren:</b>\n"
+                    . htmlspecialchars($e->getMessage()) . "\n\n"
+                    . "dupId=$dupId | dupName=" . htmlspecialchars($dupName) . " | dupLocId=$dupLocId | newId=" . ($newId ?? '?')
+                    . "</pre>");
+            }
+        }
+    }
+
+    // Wenn Bedingungen nicht erfüllt – zurück ohne Änderung
+    header("Location: index.php?location_id=" . $dupLocId);
+    exit;
+}
+
 // Daten abrufen
 if ($locationId) {
     // Projekte für diesen Standort inkl. Formatgröße
@@ -169,6 +255,17 @@ if ($locationId) {
                                         <i class="bi bi-trash3"></i>
                                     </button>
                                 </form>
+                                <!-- Duplizieren-Button -->
+                                <button type="button"
+                                    class="btn btn-outline-secondary btn-sm border-0 px-2 position-absolute"
+                                    style="right: 46px; top: 15px;"
+                                    title="Projekt duplizieren"
+                                    data-project-id="<?= (int)$project['id'] ?>"
+                                    data-project-name="<?= htmlspecialchars($project['name'], ENT_QUOTES) ?>"
+                                    onclick="event.stopPropagation(); openDuplicateModal(this)"
+                                >
+                                    <i class="bi bi-copy"></i>
+                                </button>
                             </div>
                             <div class="card-footer bg-transparent border-top-0 px-4 pb-4">
                                 <small class="text-muted">Geändert: <?php echo date('d.m.Y H:i', strtotime($project['modified_at'])); ?></small>
@@ -213,9 +310,45 @@ if ($locationId) {
 
 <footer class="text-center py-5 mt-auto" style="font-size: 0.95rem; color: #cbd5e1; border-top: 1px solid #334155; background-color: #1e293b;">
     <p class="mb-1">© 2026 Drinkport KG - Barcode & Etiketten-System. <a href="mailto:it-service@drinkport.de?subject=Unterst%C3%BCtzung%20f%C3%BCr%20das%20Barcode-Tool%20ben%C3%B6tigt&body=...%7Bbitte%20beschreiben%20Sie%20ihr%20Problem%7D..." style="color: #60a5fa;">IT-Support</a> kontaktieren bei Fragen zur Einrichtung.</p>
-    <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.4rem;">UI-System-STABLE v2.7.2</div>
+    <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.4rem;">UI-System-STABLE v2.8.0</div>
 </footer>
 
+<!-- Modal: Projekt duplizieren -->
+<div class="modal fade" id="duplicateProjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold"><i class="bi bi-copy me-2 text-primary"></i>Projekt duplizieren</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="index.php?location_id=<?= (int)$locationId ?>">
+                <input type="hidden" name="duplicate_project_id" id="dupProjectId" value="">
+                <input type="hidden" name="duplicate_location_id" value="<?= (int)$locationId ?>">
+                <div class="modal-body p-4">
+                    <p class="text-secondary small mb-3">Erstellt eine vollständige Kopie des Projekts (Format, Objekte, Felder). Die CSV-Datei wird geteilt.</p>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small">Neuer Projektname</label>
+                        <input type="text" class="form-control bg-dark text-light border-secondary" name="duplicate_new_name" id="dupNewName" placeholder="Kopie von ..." required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-link text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold"><i class="bi bi-copy me-1"></i> Duplizieren</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function openDuplicateModal(btn) {
+    const projectId = btn.getAttribute('data-project-id');
+    const projectName = btn.getAttribute('data-project-name') || '';
+    document.getElementById('dupProjectId').value = projectId;
+    document.getElementById('dupNewName').value = 'Kopie von ' + projectName;
+    new bootstrap.Modal(document.getElementById('duplicateProjectModal')).show();
+}
+</script>
 </body>
 </html>

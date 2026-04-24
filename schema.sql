@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS label_formats (
     row_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
     show_calibration_border TINYINT(1) DEFAULT 0,
     print_scale      FLOAT NOT NULL DEFAULT 100.0,
+    media_type       ENUM('sheet','roll') NOT NULL DEFAULT 'sheet',
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -95,6 +96,7 @@ CREATE TABLE IF NOT EXISTS global_label_templates (
     `rows`           INT   NOT NULL DEFAULT 1,
     col_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
     row_gap_mm       FLOAT NOT NULL DEFAULT 0.0,
+    media_type       ENUM('sheet','roll') NOT NULL DEFAULT 'sheet',
     UNIQUE INDEX idx_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

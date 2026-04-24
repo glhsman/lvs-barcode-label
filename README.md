@@ -1,8 +1,19 @@
-# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.7.2
+# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.8.0
 
-Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
+Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten.
 
 Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+
+---
+
+## ✨ Neuheiten in Version 2.8.0
+Dieses Update erweitert den Designer um Bildobjekte und verbessert die Projektverwaltung:
+
+*   **🖼️ Neue Bildbox im Designer:** Über **"+ Bild"** lassen sich jetzt Produktbilder, Pfeile und Hinweis-Piktogramme direkt auf dem Etikett platzieren.
+*   **🔒 Ratio-Lock für Bildboxen:** In den Eigenschaften kann das Seitenverhältnis gesperrt werden (standardmäßig aktiv). Bei Änderung von Breite oder Höhe wird der jeweils andere Wert automatisch passend mitgeführt.
+*   **📏 Kontrollierter Bild-Upload:** Es sind nur **JPG/PNG** erlaubt, mit einer sichtbaren Begrenzung auf **max. 200 KB**.
+*   **🧾 Bilddruck in Vorschau/PDF:** Bildobjekte werden in der Druckvorschau und im erzeugten PDF korrekt mitgerendert.
+*   **📋 Projekte duplizieren:** Projekte können aus der Übersicht als Kopie erstellt werden. Die neue Kopie übernimmt Format, Felder und Objekte, benötigt aber nur einen neuen Projektnamen.
 
 ---
 
@@ -117,7 +128,7 @@ Dieses Update fokussierte sich auf maximale Benutzerfreundlichkeit im Designer u
 Beim Schulen und Einweisen von neuen Benutzern ist dieses Prinzip das Wichtigste:
 
 **Was ist ein Projekt?**
-Ein Projekt ist praktisch wie ein **"Ordner für einen bestimmten Einsatzzweck"** (z.B. ein Projekt namens *"Große Paletten-Etiketten"* und ein anderes namens *"Kleine Regal-Labels"*). 
+Ein Projekt ist praktisch wie ein **"Ordner für einen bestimmten Einsatzzweck"** (z.B. ein Projekt namens *"Große Paletten-Etiketten"* und ein anderes namens *"Kleine Regal-Labels"*).
 
 In so einem Projekt merkt sich die Software dauerhaft genau drei Dinge:
 1. **Das Zubehör (Bogen-Layout)**: Wie groß ist das Etikett? (z.B. 100x50mm, 3-spaltig auf A4).
@@ -140,13 +151,13 @@ Wenn der Mitarbeiter seinen Dienst beginnt, sieht der Standard-Ablauf wie folgt 
    Er klickt rechts oben auf den Button **`Reload csv`** und lädt die heutige, tagesaktuelle Export-Liste (z.B. 13.000 Zeilen aus dem ERP-System) hoch.
 
 3. **Auswählen & Drucken:**
-   Er sieht die Daten nun im Tab "DATEN". 
+   Er sieht die Daten nun im Tab "DATEN".
    * Er kann nach relevanten Texten filtern.
    * Er wählt per Checkbox genau die Artikel aus, für die physische Aufkleber benötigt werden (Tipp: Die Master-Checkbox im Tabellenkopf wählt alle an/ab).
    * Danach klickt er auf "Drucken". Die Software generiert das PDF on-the-fly exakt aus der aktuellen Auswahl.
 
 4. **Flüchtiger Speicher & Dauerhaftes Design:**
-   Schließt der Mitarbeiter den Browser oder lässt die Session ablaufen, löschen sich die über 13.000 Artikeldaten automatisch aus dem aktiven Speicher. Es fallen keine Datenbank-Reste an. 
+   Schließt der Mitarbeiter den Browser oder lässt die Session ablaufen, löschen sich die über 13.000 Artikeldaten automatisch aus dem aktiven Speicher. Es fallen keine Datenbank-Reste an.
    **Das Wichtigste:** Das Etiketten-Layout, die gewählte Vorlage (Template) und die Projekteinstellungen warten aber brav unverändert auf den Einsatz am nächsten Tag!
 
 5. **Spezialfall: Rollendrucker (z.B. Brother P-Touch)**
@@ -165,7 +176,7 @@ Erst wenn ein völlig neues Etikettenmaß verwendet werden soll oder eine grundl
 
 Eine große Arbeitserleichterung für Anwender: **Platzhalter und Spaltennamen müssen zu keinem Zeitpunkt manuell eingetippt oder konfiguriert werden!** Das System ist darauf ausgelegt, sich selbst zu konfigurieren:
 
-1. **Beim ersten Import:** 
+1. **Beim ersten Import:**
    Das System liest vollautomatisch die oberste Zeile (den Header) der hochgeladenen CSV-Datei aus. Daraus generiert es für den Designer sofort fertige Klick-Bausteine (z.B. `[~MatNr~]`, `[~MHD~]`).
 2. **Fehlertoleranz:**
    Sollte eine CSV-Spalte keine Überschrift haben, vergibt das System automatisch Notnamen wie "Spalte 3", damit keine Daten verloren gehen.

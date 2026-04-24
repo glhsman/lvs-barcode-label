@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $projectId = $_POST['project_id'] ?? null;
-    
+
     if (!$projectId) {
         echo json_encode(['success' => false, 'message' => 'Keine Projekt-ID']);
         exit;
@@ -14,10 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pId = $projectId;
         $stmt = $pdo->prepare("
-            UPDATE label_formats SET 
-            width_mm = ?, 
-            height_mm = ?, 
-            `cols` = ?, 
+            UPDATE label_formats SET
+            width_mm = ?,
+            height_mm = ?,
+            `cols` = ?,
             `rows` = ?,
             margin_top_mm = ?,
             margin_bottom_mm = ?,
@@ -27,10 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             row_gap_mm = ?,
             template_id = ?,
             show_calibration_border = ?,
-            print_scale = ?
+            print_scale = ?,
+            media_type = ?
             WHERE project_id = ?
         ");
-        
+
+        $mediaType = $_POST["media_type_$pId"] ?? 'sheet';
+        if (!in_array($mediaType, ['sheet', 'roll'], true)) {
+            $mediaType = 'sheet';
+        }
+
         $stmt->execute([
             (float)str_replace(',', '.', $_POST["width_mm_$pId"] ?? 0),
             (float)str_replace(',', '.', $_POST["height_mm_$pId"] ?? 0),
@@ -45,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ($_POST["template_id_$pId"] ? (int)$_POST["template_id_$pId"] : null),
             (isset($_POST["show_calibration_border_$pId"]) ? 1 : 0),
             (float)str_replace(',', '.', $_POST["print_scale_$pId"] ?? 100.0),
+            $mediaType,
             $pId
         ]);
 

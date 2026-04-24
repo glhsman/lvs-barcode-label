@@ -19,6 +19,10 @@ $stmt = $pdo->prepare("SELECT * FROM label_formats WHERE project_id = ?");
 $stmt->execute([$projectId]);
 $format = $stmt->fetch();
 
+$isRollFormat = (($format['media_type'] ?? 'sheet') === 'roll');
+$pageWidthMm = $isRollFormat ? (float)$format['width_mm'] : 210.0;
+$pageHeightMm = $isRollFormat ? (float)$format['height_mm'] : 297.0;
+
 // Objekte laden
 $stmt = $pdo->prepare("SELECT * FROM label_objects WHERE project_id = ? ORDER BY z_order ASC");
 $stmt->execute([$projectId]);
@@ -60,15 +64,15 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     <title>Druckvorschau - <?= htmlspecialchars($project['name']) ?></title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        @page { size: A4; margin: 0; }
+        @page { size: <?= $pageWidthMm ?>mm <?= $pageHeightMm ?>mm; margin: 0; }
         body { margin: 0; padding: 0; background: #f0f0f0; font-family: Arial, sans-serif; }
         .page {
-            width: 210mm; height: 297mm; background: white; margin: 10mm auto;
+            width: <?= $pageWidthMm ?>mm; height: <?= $pageHeightMm ?>mm; background: white; margin: <?= $isRollFormat ? '0 auto' : '10mm auto' ?>;
             position: relative; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.2);
             page-break-after: always;
         }
         .label {
-            position: absolute; width: <?= $format['width_mm'] ?>mm; height: <?= $format['height_mm'] ?>mm;
+            position: absolute; width: <?= (float)$format['width_mm'] ?>mm; height: <?= (float)$format['height_mm'] ?>mm;
             box-sizing: border-box; overflow: hidden;
         }
         .calibration-frame {
@@ -111,9 +115,9 @@ if (empty($records)) {
     $records = array_fill(0, $copyCount, null);
 }
 
-$labelsPerPage = $format['cols'] * $format['rows'];
+$labelsPerPage = $isRollFormat ? 1 : max(1, (int)$format['cols'] * (int)$format['rows']);
 $printQueue = array_values($records);
-$startOffset = max(0, $startIndex - 1);
+$startOffset = $isRollFormat ? 0 : max(0, $startIndex - 1);
 
 $pageOpen = false;
 $currentPage = -1;
@@ -128,12 +132,18 @@ foreach ($printQueue as $idx => $record) {
         $currentPage = $targetPage;
     }
 
-    $indexOnPage = $layoutIndex % $labelsPerPage;
-    $col = $indexOnPage % $format['cols'];
-    $row = floor($indexOnPage / $format['cols']);
+    if ($isRollFormat) {
+        $left = 0;
+        $top = 0;
+    } else {
+        $colsOnSheet = max(1, (int)$format['cols']);
+        $indexOnPage = $layoutIndex % $labelsPerPage;
+        $col = $indexOnPage % $colsOnSheet;
+        $row = floor($indexOnPage / $colsOnSheet);
 
-    $left = $format['margin_left_mm'] + ($col * ($format['width_mm'] + $format['col_gap_mm']));
-    $top = $format['margin_top_mm'] + ($row * ($format['height_mm'] + $format['row_gap_mm']));
+        $left = $format['margin_left_mm'] + ($col * ($format['width_mm'] + $format['col_gap_mm']));
+        $top = $format['margin_top_mm'] + ($row * ($format['height_mm'] + $format['row_gap_mm']));
+    }
 
     $scale = (float)($format['print_scale'] ?? 100.0) / 100.0;
     $scaleStyle = ($scale != 1.0) ? "transform: scale($scale); transform-origin: top left;" : "";
@@ -168,6 +178,12 @@ foreach ($printQueue as $idx => $record) {
                 $vClass = !empty($p['vertical']) ? 'text-vertical' : '';
                 $textAlign = $p['text_align'] ?? 'center';
                 echo "<div class='label-object $vClass text-{$textAlign}' style='{$style} font-size:{$fs}pt; {$bold} {$italic}'>".htmlspecialchars($txt)."</div>";
+            } elseif ($obj['type'] === 'image') {
+                $imgData = $p['image_data'] ?? '';
+                // Sicherheitspr\u00fcfung: nur erlaubte Data-URLs
+                if ($imgData && (strncmp($imgData, 'data:image/jpeg;base64,', 23) === 0 || strncmp($imgData, 'data:image/png;base64,', 22) === 0)) {
+                    echo "<div class='label-object' style='{$style}'><img src='" . $imgData . "' style='width:100%; height:100%; object-fit:contain; display:block;'></div>";
+                }
             } else {
                 $showHTR = isset($p['show_htr']) ? ($p['show_htr'] ? 'true' : 'false') : 'true';
                 echo "<div class='label-object' style='{$style}'><canvas class='barcode-render' data-type='".($p['barcode_type']??'code128')."' data-content='".htmlspecialchars($txt)."' data-htr='{$showHTR}' style='width:100%; height:100%;'></canvas></div>";

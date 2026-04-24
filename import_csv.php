@@ -81,8 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // 5. Standard-Etikettenformat anlegen
-        $stmt = $pdo->prepare("INSERT INTO label_formats (project_id, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`)
-                               VALUES (?, 100.0, 50.0, 2.0, 2.0, 2.0, 2.0, 1, 1)");
+        $stmt = $pdo->prepare("INSERT INTO label_formats (project_id, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`, media_type)
+                               VALUES (?, 100.0, 50.0, 2.0, 2.0, 2.0, 2.0, 1, 1, 'sheet')");
         $stmt->execute([$projectId]);
 
         $pdo->commit();

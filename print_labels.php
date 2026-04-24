@@ -77,7 +77,8 @@ foreach ($selectedRecords as $record) {
 }
 
 $hasCsvData = isset($_SESSION["csv_raw_13k_project_{$projectId}"]);
-$labelsPerPage = (int)$format['cols'] * (int)$format['rows'];
+$isRollFormat = (($format['media_type'] ?? 'sheet') === 'roll');
+$labelsPerPage = max(1, (int)$format['cols'] * (int)$format['rows']);
 $defaultCopies = 1;
 ?>
 <!DOCTYPE html>
@@ -169,7 +170,7 @@ $defaultCopies = 1;
                 </div>
             <?php endif; ?>
 
-            <?php if ((int)$format['cols'] === 1 && (int)$format['rows'] === 1): ?>
+            <?php if ($isRollFormat): ?>
                 <div class="card mb-4 border-info">
                     <div class="card-body d-flex align-items-center">
                         <div class="bg-info bg-opacity-10 p-3 rounded-circle me-3">
@@ -242,7 +243,7 @@ $defaultCopies = 1;
         </div>
 
         <div class="col-lg-6">
-            <?php if ((int)$format['cols'] === 1 && (int)$format['rows'] === 1): ?>
+            <?php if ($isRollFormat): ?>
                 <div class="preview-container text-center py-5 d-flex flex-column align-items-center justify-content-center" style="min-height: 100%;">
                     <i class="bi bi-receipt mb-3 text-secondary" style="font-size: 5rem; opacity: 0.5;"></i>
                     <h5 class="text-primary mb-2">Ansicht für Rollen-Layout</h5>

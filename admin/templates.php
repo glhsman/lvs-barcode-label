@@ -25,61 +25,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'save' || $action === 'save_new') {
         $name = trim($_POST['name']);
-        if (empty($name)) { $error = "Der Name der Vorlage darf nicht leer sein."; }
-        else {
-            $data = [
-                'name' => $name,
-                'manufacturer' => $_POST['manufacturer'] ?? '',
-                'product_name' => $_POST['product_name'] ?? '',
-                'width_mm' => normalize_num($_POST['width_mm']),
-                'height_mm' => normalize_num($_POST['height_mm']),
-                'margin_top_mm' => normalize_num($_POST['margin_top_mm']),
-                'margin_bottom_mm' => normalize_num($_POST['margin_bottom_mm']),
-                'margin_left_mm' => normalize_num($_POST['margin_left_mm']),
-                'margin_right_mm' => normalize_num($_POST['margin_right_mm']),
-                'cols' => (int)$_POST['cols'],
-                'rows' => (int)$_POST['rows'],
-                'col_gap_mm' => normalize_num($_POST['col_gap_mm']),
-                'row_gap_mm' => normalize_num($_POST['row_gap_mm'])
-            ];
-
-            // A4-Maßprüfung (Info-Logik bleibt erhalten, Blockierung entfernt)
-            $totalWidth = $data['margin_left_mm'] + $data['margin_right_mm'] + ($data['cols'] * $data['width_mm']) + (($data['cols'] - 1) * $data['col_gap_mm']);
-            $totalHeight = $data['margin_top_mm'] + $data['margin_bottom_mm'] + ($data['rows'] * $data['height_mm']) + (($data['rows'] - 1) * $data['row_gap_mm']);
-
-            try {
-                if ($action === 'save' && $id > 0) {
-                    $sql = "UPDATE global_label_templates SET 
-                            name=:name, manufacturer=:manufacturer, product_name=:product_name, 
-                            width_mm=:width_mm, height_mm=:height_mm, 
-                            margin_top_mm=:margin_top_mm, margin_bottom_mm=:margin_bottom_mm, 
-                            margin_left_mm=:margin_left_mm, margin_right_mm=:margin_right_mm, 
-                            `cols`=:cols, `rows`=:rows, 
-                            col_gap_mm=:col_gap_mm, row_gap_mm=:row_gap_mm 
-                            WHERE id=:id";
-                    $data['id'] = $id;
-                    $pdo->prepare($sql)->execute($data);
-                    $message = "Vorlage erfolgreich aktualisiert.";
-                } else {
-                    $sql = "INSERT INTO global_label_templates 
-                            (name, manufacturer, product_name, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`, col_gap_mm, row_gap_mm) 
-                            VALUES (:name, :manufacturer, :product_name, :width_mm, :height_mm, :margin_top_mm, :margin_bottom_mm, :margin_left_mm, :margin_right_mm, :cols, :rows, :col_gap_mm, :row_gap_mm)";
-                    $pdo->prepare($sql)->execute($data);
-                    $message = "Neue Vorlage erfolgreich gespeichert.";
-                }
-                
-                if ($totalWidth > 210.1 || $totalHeight > 297.1) {
-                    $message .= " (Hinweis: Maße überschreiten A4!)";
-                }
-            } catch (Exception $e) { $error = "Datenbankfehler: " . $e->getMessage(); }
+        if (empty($name)) {
+            header('Location: templates.php?error=' . urlencode("Der Name der Vorlage darf nicht leer sein."));
+            exit;
+        }
+        $data = [
+            'name' => $name,
+            'manufacturer' => $_POST['manufacturer'] ?? '',
+            'product_name' => $_POST['product_name'] ?? '',
+            'width_mm' => normalize_num($_POST['width_mm']),
+            'height_mm' => normalize_num($_POST['height_mm']),
+            'margin_top_mm' => normalize_num($_POST['margin_top_mm']),
+            'margin_bottom_mm' => normalize_num($_POST['margin_bottom_mm']),
+            'margin_left_mm' => normalize_num($_POST['margin_left_mm']),
+            'margin_right_mm' => normalize_num($_POST['margin_right_mm']),
+            'cols' => (int)$_POST['cols'],
+            'rows' => (int)$_POST['rows'],
+            'col_gap_mm' => normalize_num($_POST['col_gap_mm']),
+            'row_gap_mm' => normalize_num($_POST['row_gap_mm']),
+            'media_type' => in_array($_POST['media_type'] ?? '', ['sheet', 'roll']) ? $_POST['media_type'] : 'sheet',
+        ];
+        try {
+            if ($action === 'save' && $id > 0) {
+                $sql = "UPDATE global_label_templates SET
+                        name=:name, manufacturer=:manufacturer, product_name=:product_name,
+                        width_mm=:width_mm, height_mm=:height_mm,
+                        margin_top_mm=:margin_top_mm, margin_bottom_mm=:margin_bottom_mm,
+                        margin_left_mm=:margin_left_mm, margin_right_mm=:margin_right_mm,
+                        `cols`=:cols, `rows`=:rows,
+                        col_gap_mm=:col_gap_mm, row_gap_mm=:row_gap_mm,
+                        media_type=:media_type
+                        WHERE id=:id";
+                $data['id'] = $id;
+                $pdo->prepare($sql)->execute($data);
+                header('Location: templates.php?msg=' . urlencode("Vorlage erfolgreich aktualisiert.") . '&selected=' . $id);
+            } else {
+                $sql = "INSERT INTO global_label_templates
+                        (name, manufacturer, product_name, width_mm, height_mm, margin_top_mm, margin_bottom_mm, margin_left_mm, margin_right_mm, `cols`, `rows`, col_gap_mm, row_gap_mm, media_type)
+                        VALUES (:name, :manufacturer, :product_name, :width_mm, :height_mm, :margin_top_mm, :margin_bottom_mm, :margin_left_mm, :margin_right_mm, :cols, :rows, :col_gap_mm, :row_gap_mm, :media_type)";
+                $pdo->prepare($sql)->execute($data);
+                $newId = (int)$pdo->lastInsertId();
+                header('Location: templates.php?msg=' . urlencode("Neue Vorlage erfolgreich gespeichert.") . '&selected=' . $newId);
+            }
+            exit;
+        } catch (Exception $e) {
+            header('Location: templates.php?error=' . urlencode("Datenbankfehler: " . $e->getMessage()));
+            exit;
         }
     }
 
     if ($action === 'delete' && $id > 0) {
         $pdo->prepare("DELETE FROM global_label_templates WHERE id = ?")->execute([$id]);
-        $message = "Vorlage erfolgreich gelöscht.";
+        header('Location: templates.php?msg=' . urlencode("Vorlage erfolgreich gelöscht."));
+        exit;
     }
 }
+
+$message   = $_GET['msg']   ?? '';
+$error     = $_GET['error'] ?? '';
+$selectedId = (int)($_GET['selected'] ?? 0);
 
 // Alle Vorlagen für die Liste abrufen
 $templates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC")->fetchAll();
@@ -110,12 +114,12 @@ $templates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC
             transition: all 0.2s;
             color: #cbd5e1; /* Helles Grau für bessere Lesbarkeit */
         }
-        .template-item:hover { 
-            background: rgba(59, 130, 246, 0.15); 
+        .template-item:hover {
+            background: rgba(59, 130, 246, 0.15);
             color: #ffffff;
         }
-        .template-item.active { 
-            background: rgba(59, 130, 246, 0.3); 
+        .template-item.active {
+            background: rgba(59, 130, 246, 0.3);
             border-left: 4px solid var(--accent);
             color: #ffffff;
         }
@@ -127,7 +131,7 @@ $templates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC
         .template-item.active .text-secondary {
             color: #cbd5e1 !important;
         }
-        
+
         .section-header {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -138,10 +142,10 @@ $templates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC
             margin-bottom: 15px;
             font-weight: 700;
         }
-        
+
         .form-label { color: #94a3b8; font-size: 0.85rem; margin-bottom: 3px; }
         .input-group-text { background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.1); color: #94a3b8; }
-        
+
         .btn-panel {
             background: rgba(30, 41, 59, 0.5);
             padding: 15px;
@@ -202,10 +206,13 @@ $templates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC
                         <div class="p-4 text-center text-muted small">Keine Vorlagen vorhanden.</div>
                     <?php else: ?>
                         <?php foreach ($templates as $t): ?>
-                            <div class="template-item" onclick="loadTemplate(<?= $t['id'] ?>, this)">
+                            <div class="template-item" data-id="<?= $t['id'] ?>" onclick="loadTemplate(<?= $t['id'] ?>, this)">
                                 <div class="fw-bold small"><?= htmlspecialchars($t['name']) ?></div>
                                 <div class="text-secondary" style="font-size: 0.75rem;">
                                     <?= htmlspecialchars($t['manufacturer'] ?: 'Generic') ?> - <?= $t['width_mm'] ?>x<?= $t['height_mm'] ?>mm
+                                    <?php if (($t['media_type'] ?? 'sheet') === 'roll'): ?>
+                                        <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">Rolle</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -279,6 +286,18 @@ $templates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC
                             <div class="col-md-3">
                                 <label class="form-label">Rechts:</label>
                                 <input type="text" name="margin_right_mm" id="tplMarginRight" class="form-control bg-dark border-secondary text-light" placeholder="0.0">
+                            </div>
+                        </div>
+
+                        <!-- Medientyp -->
+                        <div class="section-header">Medientyp</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Bogen oder Rolle:</label>
+                                <select name="media_type" id="tplMediaType" class="form-select bg-dark border-secondary text-light">
+                                    <option value="sheet">Bogen (z.B. A4)</option>
+                                    <option value="roll">Rolle (Endlos, z.B. Brother P-Touch)</option>
+                                </select>
                             </div>
                         </div>
 
@@ -366,14 +385,22 @@ function loadTemplate(id, el) {
             document.getElementById('tplRows').value = data.rows;
             document.getElementById('tplColGap').value = data.col_gap_mm;
             document.getElementById('tplRowGap').value = data.row_gap_mm;
-            
+            document.getElementById('tplMediaType').value = data.media_type || 'sheet';
+
             updateA4Check();
         });
 }
 
 function updateA4Check() {
     const parse = (val) => parseFloat(String(val).replace(',', '.')) || 0;
-    
+    const box = document.getElementById('a4CheckResult');
+
+    // Bei Rollentyp A4-Check ausblenden
+    if (document.getElementById('tplMediaType').value === 'roll') {
+        box.classList.add('d-none');
+        return;
+    }
+
     const w = parse(document.getElementById('tplWidth').value);
     const h = parse(document.getElementById('tplHeight').value);
     const ml = parse(document.getElementById('tplMarginLeft').value);
@@ -388,13 +415,12 @@ function updateA4Check() {
     const totalW = ml + mr + (cols * w) + ((cols - 1) * gapX);
     const totalH = mt + mb + (rows * h) + ((rows - 1) * gapY);
 
-    const box = document.getElementById('a4CheckResult');
     const icon = document.getElementById('a4Icon');
     const title = document.getElementById('a4Title');
     const text = document.getElementById('a4Text');
 
     box.classList.remove('d-none');
-    
+
     if (totalW > 210.1 || totalH > 297.1) {
         box.className = 'mt-4 p-3 rounded-3 border border-danger bg-danger bg-opacity-10 text-danger';
         icon.innerHTML = '<i class="bi bi-exclamation-octagon-fill"></i>';
@@ -412,6 +438,7 @@ function updateA4Check() {
 ['tplWidth', 'tplHeight', 'tplMarginLeft', 'tplMarginRight', 'tplMarginTop', 'tplMarginBottom', 'tplCols', 'tplRows', 'tplColGap', 'tplRowGap'].forEach(id => {
     document.getElementById(id).addEventListener('input', updateA4Check);
 });
+document.getElementById('tplMediaType').addEventListener('change', updateA4Check);
 
 function clearFields() {
     document.getElementById('templateId').value = 0;
@@ -439,6 +466,15 @@ function deleteTemplate() {
     }
 }
 </script>
+
+<?php if ($selectedId > 0): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const item = document.querySelector('.template-item[data-id="<?= $selectedId ?>"]');
+    if (item) { loadTemplate(<?= $selectedId ?>, item); }
+});
+</script>
+<?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
