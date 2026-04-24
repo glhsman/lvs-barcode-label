@@ -18,12 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
 
         // 2. Neue CSV einlesen
         $csvData = file_get_contents($file);
-
-        // Erkennung der Kodierung (Windows-1252 ist bei CSV aus Excel oft Standard)
-        $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
-        if ($encoding !== 'UTF-8') {
-            $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
-        }
+        $csvData = normalize_csv_to_utf8($csvData);
 
         // Zeilen trennen
         $lines = explode("\n", str_replace("\r", "", $csvData));
@@ -48,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file']) && isset
         }
 
         // 4. In die Session laden
-        $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
+        $_SESSION["csv_raw_13k_project_{$projectId}"] = $csvData;
         $_SESSION["csv_selected_{$projectId}"] = []; // Standardmäßig nichts selektiert
 
         // 5. Dateinamen am Projekt speichern

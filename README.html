@@ -815,81 +815,154 @@ hue-6-2: #e6c07b
         
         </head>
         <body class="vscode-body vscode-light">
-            <h1 id="drinkport-kg---barcode--etiketten-system-webapp---v210">Drinkport KG - Barcode &amp; Etiketten-System (WebApp) - v2.1.0</h1>
-<p>Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten.</p>
-<p>Die Applikation basiert auf einer blitzschnellen <strong>In-Memory/Session-Architektur</strong>. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.</p>
-<hr>
-<h2 id="-neuheiten-in-version-210">✨ Neuheiten in Version 2.1.0</h2>
-<p>Dieses Update fokussiert sich auf maximale Benutzerfreundlichkeit im Designer und volle Unterstützung für Spezial-Hardware:</p>
-<ul>
-<li><strong>⚡ Aktiver Designer:</strong> Formate (Breite/Höhe) ändern sich jetzt in Echtzeit beim Tippen. Kein Neuladen mehr nötig!</li>
-<li><strong>🔍 Power-Zoom (Auto-Scaling):</strong> Winzige Etiketten (z.B. 12mm P-Touch) werden automatisch bis zu 5-fach vergrößert dargestellt.</li>
-<li><strong>🔳 QR-Code Perfektion:</strong> Automatische 1:1 Synchronisierung und verzerrungsfreies Rendering (kein &quot;Eiern&quot; mehr).</li>
-<li><strong>📎 Vorlagen-Gedächtnis:</strong> Das System merkt sich nun pro Projekt, welches Template (Zweckform, Brother etc.) als Basis dient.</li>
-<li><strong>🌀 Rollendrucker-Support:</strong> Die Druckvorschau erkennt automatisch Endlos-Rollen (1x1 Layout) und blendet störende Bogen-Optionen aus.</li>
-<li><strong>🛡️ Cache-Isolation:</strong> Projekte beeinflussen sich nicht mehr gegenseitig durch Browser-Autovervollständigung.</li>
-</ul>
-<hr>
-<h2 id="️-das-mentale-modell-für-anwender-ein-projekt--ein-design">🛠️ Das mentale Modell für Anwender: Ein Projekt = Ein Design</h2>
-<p>Beim Schulen und Einweisen von neuen Benutzern ist dieses Prinzip das Wichtigste:</p>
-<p><strong>Was ist ein Projekt?</strong>
-Ein Projekt ist praktisch wie ein <strong>&quot;Ordner für einen bestimmten Einsatzzweck&quot;</strong> (z.B. ein Projekt namens <em>&quot;Große Paletten-Etiketten&quot;</em> und ein anderes namens <em>&quot;Kleine Regal-Labels&quot;</em>).</p>
-<p>In so einem Projekt merkt sich die Software dauerhaft genau drei Dinge:</p>
-<ol>
-<li><strong>Das Zubehör (Bogen-Layout)</strong>: Wie groß ist das Etikett? (z.B. 100x50mm, 3-spaltig auf A4).</li>
-<li><strong>Das Aussehen (Design-Layout)</strong>: Wo steht der Text? Wo ist der Barcode? Welche Schriftgröße wird genutzt? (inkl. der Platzhalter).</li>
-<li><strong>Die CSV-Spalten (Felder)</strong>: Welche Daten gibt es grundsätzlich zum Einfügen? (Die Kopfzeilen der CSV Datei werden als Platzhalter wie <code>[~MatNr~]</code> in der Oberfläche bereitgestellt).</li>
-</ol>
-<p><strong>Was ist ein Projekt explizit <em>nicht</em>?</strong>
-Es ist <strong>kein Datenarchiv!</strong> Die hochgeladenen CSV-Listen mit den echten Artikelnummern oder Adressen werden <em>nicht</em> im Projekt für die Ewigkeit gespeichert. Sie sind &quot;Wegwerfware&quot; und verfliegen, sobald die Arbeit erledigt und der Tab geschlossen ist.</p>
-<hr>
-<h2 id="-der-tägliche-workflow-für-den-anwender">🔄 Der tägliche Workflow für den Anwender</h2>
-<p>Wenn der Mitarbeiter seinen Dienst beginnt, sieht der Standard-Ablauf wie folgt aus:</p>
-<ol>
-<li>
-<p><strong>Projekt auswählen:</strong>
-Auf der Startseite wählt der Mitarbeiter den gewünschten Einsatzzweck (das fertige &quot;Projekt&quot;) aus.</p>
-</li>
-<li>
-<p><strong>Daten &quot;reinwerfen&quot; (Reload CSV):</strong>
-Er klickt rechts oben auf den Button <strong><code>Reload csv</code></strong> und lädt die heutige, tagesaktuelle Export-Liste (z.B. 13.000 Zeilen aus dem ERP-System) hoch.</p>
-</li>
-<li>
-<p><strong>Auswählen &amp; Drucken:</strong>
-Er sieht die Daten nun im Tab &quot;DATEN&quot;.</p>
-<ul>
-<li>Er kann nach relevanten Texten filtern.</li>
-<li>Er wählt per Checkbox genau die Artikel aus, für die physische Aufkleber benötigt werden (Tipp: Die Master-Checkbox im Tabellenkopf wählt alle an/ab).</li>
-<li>Danach klickt er auf &quot;Drucken&quot;. Die Software generiert das PDF on-the-fly exakt aus der aktuellen Auswahl.</li>
-</ul>
-</li>
-<li>
-<p><strong>Flüchtiger Speicher &amp; Dauerhaftes Design:</strong>
-Schließt der Mitarbeiter den Browser oder lässt die Session ablaufen, löschen sich die über 13.000 Artikeldaten automatisch aus dem aktiven Speicher. Es fallen keine Datenbank-Reste an.
-<strong>Das Wichtigste:</strong> Das Etiketten-Layout, die gewählte Vorlage (Template) und die Projekteinstellungen warten aber brav unverändert auf den Einsatz am nächsten Tag!</p>
-</li>
-<li>
-<p><strong>Spezialfall: Rollendrucker (z.B. Brother P-Touch)</strong>
-Bei Etiketten, die nur eine Spalte und eine Zeile haben (1x1), schaltet die Druckvorschau automatisch in den &quot;Endlos-Modus&quot;. Statt eines A4-Rasters sieht der Anwender eine klare Rollen-Vorschau ohne komplizierte Startpositions-Auswahl.</p>
-</li>
-</ol>
-<hr>
-<p>💡 <strong>Muss für jede neue CSV-Datei ein neues Projekt angelegt werden?</strong>
-<strong>Nein!</strong> Wenn die CSV-Datei denselben Aufbau hat (also dieselben Spaltenüberschriften wie gestern), lädt der Anwender sie einfach per <code>Reload csv</code> in das <em>bestehende</em> Projekt ein. Das dortige Design bleibt erhalten und wendet sich automatisch fehlerfrei auf die tagesaktuellen Datenreihen an.</p>
-<p>Erst wenn ein völlig neues Etikettenmaß verwendet werden soll oder eine grundlegend andere CSV-Liste bezogen wird, sollte ein neues Projekt in der Hauptansicht angelegt werden.</p>
-<hr>
-<h2 id="-vollautomatisches-platzhalter-system-header">🪄 Vollautomatisches Platzhalter-System (Header)</h2>
-<p>Eine große Arbeitserleichterung für Anwender: <strong>Platzhalter und Spaltennamen müssen zu keinem Zeitpunkt manuell eingetippt oder konfiguriert werden!</strong> Das System ist darauf ausgelegt, sich selbst zu konfigurieren:</p>
-<ol>
-<li><strong>Beim ersten Import:</strong>
-Das System liest vollautomatisch die oberste Zeile (den Header) der hochgeladenen CSV-Datei aus. Daraus generiert es für den Designer sofort fertige Klick-Bausteine (z.B. <code>[~MatNr~]</code>, <code>[~MHD~]</code>).</li>
-<li><strong>Fehlertoleranz:</strong>
-Sollte eine CSV-Spalte keine Überschrift haben, vergibt das System automatisch Notnamen wie &quot;Spalte 3&quot;, damit keine Daten verloren gehen.</li>
-<li><strong>Lebende Updates (&quot;Reload CSV&quot;):</strong>
-Ändert sich der Export im ERP-System und es kommt morgen eine Spalte <code>Gewicht</code> hinzu? Kein Problem: Durch den Neulade-Vorgang (&quot;Reload CSV&quot;) bemerkt das System das Update sofort und der neue Platzhalter <code>[~Gewicht~]</code> steht im Etikettendesigner ohne jeden Handgriff zur Verfügung.</li>
-</ol>
-
-            
-            
+            <h1 id="drinkport-kg---barcode--etiketten-system-webapp---v272">Drinkport KG - Barcode &amp; Etiketten-System (WebApp) - v2.7.2</h1>
+      <p>Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten.</p>
+      <p>Die Applikation basiert auf einer blitzschnellen <strong>In-Memory/Session-Architektur</strong>. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.</p>
+      <hr>
+      <h2 id="-neuheiten-in-version-272">✨ Neuheiten in Version 2.7.2</h2>
+      <p>Dieses Update verbessert die Drucklogik auf A4-Bögen und behebt ein Encoding-Problem bei CSV-Dateien aus Windows/Excel:</p>
+      <ul>
+      <li><strong>🧾 Startposition im PDF korrigiert:</strong> Beim Druck auf teilweise verwendete Etikettenbögen werden die Felder vor der gewählten Startposition nicht mehr als leere Platzhalter-Etiketten gerendert. Der erste Datensatz beginnt nun exakt auf der gewählten Position.</li>
+      <li><strong>🔤 Umlaute aus Windows-CSV korrekt:</strong> CSV-Dateien mit deutschen Umlauten aus Windows-/Excel-Exporten werden jetzt robust nach UTF-8 normalisiert. Zeichen wie <code>ü</code>, <code>ä</code>, <code>ö</code> und <code>ß</code> erscheinen dadurch in Tabelle, Druckvorschau und PDF zuverlässig korrekt.</li>
+      <li><strong>📄 Kopiendruck für statische Projekte:</strong> Projekte ohne CSV-Basis können jetzt ein identisches Etikett mehrfach auf einem Etikettenbogen ausgeben. Die neue Eingabe <strong>„Anzahl Kopien“</strong> befindet sich direkt in der Druckkonfiguration.</li>
+      <li><strong>📐 Kopien-Hinweis in der Druckmaske:</strong> Unter dem Kopienfeld wird live angezeigt, wie viele Etiketten ein Bogen enthält und wie viele Bögen bei der eingegebenen Kopienzahl ungefähr erzeugt werden.</li>
+      <li><strong>🎯 Startposition auch für Kopiendruck:</strong> Bei statischen Projekten mit mehreren Kopien wirkt die Startposition jetzt ebenfalls korrekt, aber nur auf dem ersten Blatt. Alle folgenden Bögen beginnen wieder bei Etikett 1.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-271">✨ Neuheiten in Version 2.7.1</h2>
+      <p>Dieses Update verbessert die Bedienbarkeit und ergänzt Dokumentation:</p>
+      <ul>
+      <li><strong>↩️ Design-Wiederherstellen:</strong> Neuer „Wiederherstellen&quot;-Button im Visual Designer stellt den zuletzt gespeicherten Stand aus der Datenbank wieder her — ohne Seitenreload, mit Bestätigungsdialog.</li>
+      <li><strong>📄 PDF-Anleitung verlinkt:</strong> Die Offline-Anleitung (<code>Online-Barcode-System.pdf</code>) ist jetzt als direkter Download-Button in der Navigationsleiste (Index &amp; Designer) verknüpft — gleichwertig neben dem Online-Handbuch.</li>
+      <li><strong>🔴 Admin-Button:</strong> Der Admin-Navigationsbutton erscheint nun in Rot (analog zum Logout-Button im Admin-Bereich) für eine klarere visuelle Trennung.</li>
+      <li><strong>🔗 Hilfe-Links in neuem Tab:</strong> Handbuch und PDF-Anleitung öffnen sich jetzt immer in einem neuen Browser-Tab.</li>
+      <li><strong>🙈 .gitignore erweitert:</strong> <code>images/</code> und <code>*.docx</code> werden nun vom Versionskontrollsystem ausgeschlossen.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-270">✨ Neuheiten in Version 2.7.0</h2>
+      <p>Dieses Update verbessert die Usability des Visual Designers erheblich und behebt kritische Bugs im Datenfluss:</p>
+      <ul>
+      <li><strong>🏢 Branding-Update:</strong> Umbenennung von „Weidlich LVS&quot; zu „Drinkport KG&quot; — die Anwendung ist jetzt für alle Standorte verfügbar.</li>
+      <li><strong>📧 Support-Kontakt im Footer:</strong> Der Footer auf der Startseite enthält jetzt einen <code>IT-Support</code>-Link, der das Standard-Mailprogramm mit vorausgefüllter E-Mail öffnet (Empfänger, Betreff &amp; Nachrichtenvorlage).</li>
+      <li><strong>🎯 Intelligentes Element-Einfügen:</strong> Neue Elemente werden nicht mehr alle auf Position 5/5mm eingefügt, sondern diagonal gestaffelt (um je 5mm versetzt). Dadurch entstehen keine Überlappungen mehr und alle Elemente sind direkt sichtbar.</li>
+      <li><strong>⚡ Auto-Selektion neuer Elemente:</strong> Ein neu eingefügtes Element ist sofort selektiert (blau umrandet) und liegt automatisch im Vordergrund — direkt bearbeitbar, ohne andere Elemente wegschieben zu müssen.</li>
+      <li><strong>🔼🔽 Ebenen-Verwaltung:</strong> Neue ▲/▼-Buttons in der Objekt-Toolbar ermöglichen es, Elemente eine Ebene nach vorne oder hinten zu verschieben — perfekt für komplexe Designs mit Überlappungen.</li>
+      <li><strong>📐 Responsive Icon-Skalierung:</strong> Die Bearbeitungs-Icons (▲, ▼, ✏️, 🗑️) skalieren sich dynamisch mit der Elementhöhe (0.45x bis 1.0x), um immer optimal lesbar zu bleiben.</li>
+      <li><strong>🔗 Navigation-Fix:</strong> Der „Projektwahl&quot;-Button in der Designer-Ansicht leitet jetzt zurück zur Projektliste des aktuellen Standorts — nicht mehr zur Standortwahl.</li>
+      <li><strong>🐛 Critical Bugs behoben:</strong>
+      <ul>
+      <li><strong>Druck-Performance:</strong> Fallback-Logik für Datensatz-Auswahl korrigiert (war <code>?? true</code>, jetzt <code>?? false</code>). Dadurch wurden bei großen Datenmengen (13.000+) unbeabsichtigt alle Datensätze zum PDF hinzugefügt, statt nur der ausgewählten.</li>
+      <li><strong>Element-Auswahl:</strong> Einfacher Klick auf ein Element deselektiert jetzt korrekt alle anderen (war: bereits ausgewählte Elemente blieben selektiert).</li>
+      <li><strong>Canvas-Deselektierung:</strong> Klick auf einen leeren Bereich des Canvas deselektiert jetzt alle Elemente (war: nicht möglich).</li>
+      </ul>
+      </li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-260">✨ Neuheiten in Version 2.6.0</h2>
+      <p>Diese Version bringt mächtige Power-User-Funktionen für den Designer und eine intelligente Datenvalidierung:</p>
+      <ul>
+      <li><strong>🖱️ Multi-Selektion &amp; Dragging:</strong> Wähle mehrere Objekte mit <kbd>Strg</kbd> + Klick aus und verschiebe sie gemeinsam.</li>
+      <li><strong>🛠️ Ausrichtungs-Toolbar:</strong> Neue Werkzeuge zum linksbündigen Ausrichten, Angleichen der Breite und zur gleichmäßigen vertikalen Verteilung (inkl. +/- Abstandshalter).</li>
+      <li><strong>📏 EAN 8 &amp; 13 Validierung:</strong> Echtzeit-Prüfung der Ziffernanzahl im Designer, eine Zusammenfassung fehlerhafter Datensätze vor dem Druck sowie deutliche &quot;ERROR&quot;-Markierungen auf den Etiketten bei ungültigen Daten.</li>
+      <li><strong>📝 Textausrichtung:</strong> Unterstützung für horizontale Ausrichtung (Links, Zentriert, Rechts) direkt in den Objekteigenschaften.</li>
+      <li><strong>💎 Branding &amp; Polish:</strong> Konsistentes <code>favicon.ico</code> auf allen Seiten und Upgrade auf Bootstrap Icons v1.11.3.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-250">✨ Neuheiten in Version 2.5.0</h2>
+      <p>Dieses Major-Update transformiert die Applikation in ein mandantenfähiges Verwaltungs-System für mehrere Standorte:</p>
+      <ul>
+      <li><strong>🏢 Multi-Standort-Management:</strong> Die Startseite bietet nun eine klare Auswahl für bis zu 18 Standorte. Projekte werden sauber nach Standorten getrennt verwaltet.</li>
+      <li><strong>🖼️ Standort-Logos:</strong> Jeder Standort kann mit einem individuellen Logo (Pictogramm) personalisiert werden (unterstützt PNG, JPG, SVG).</li>
+      <li><strong>🔐 Geschützter Admin-Bereich:</strong> Neuer Bereich <code>/admin</code> zur zentralen Steuerung von Standorten und Vorlagen, gesichert durch Passwortschutz.</li>
+      <li><strong>📋 Globale Vorlagen-Datenbank:</strong> Zentrale Verwaltung von Etiketten-Maßen (Zweckform, Zweck etc.). Einmal im Admin-Bereich angelegt, stehen sie allen Projekten zur Verfügung.</li>
+      <li><strong>📏 A4-Maßprüfung:</strong> Intelligente Echtzeit-Prüfung im Admin-Bereich stellt sicher, dass Etiketten-Layouts physisch auf einen A4-Bogen passen (210x297mm).</li>
+      <li><strong>🐛 Stabilitäts-Fixes:</strong> Korrektur von PHP-Syntaxfehlern und Optimierung der Text-Sichtbarkeit im Dark-Mode.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-221">✨ Neuheiten in Version 2.2.1</h2>
+      <p>Dieses Update bringt Komfort-Funktionen für den Designer und verbesserte Fehlerbehebung:</p>
+      <ul>
+      <li><strong>🖱️ Interaktives Resizing:</strong> Objekte (Text &amp; Barcodes) können nun direkt mit der Maus an den Ecken skaliert werden.</li>
+      <li><strong>🔢 Dezimal-Flexibilität:</strong> In allen Eingabefeldern (Maße, Abstände, Skalierung) werden nun sowohl <strong>Punkte als auch Kommas</strong> gleichermaßen unterstützt.</li>
+      <li><strong>🛠️ Upload-Diagnose:</strong> Verbessertes Error-Reporting beim CSV-Import hilft dabei, Fehler wie zu große Dateien sofort zu erkennen.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-220">✨ Neuheiten in Version 2.2.0</h2>
+      <p>Dieses Feature-Update bringt mächtige Werkzeuge für die Präzisions-Kalibrierung und Gestaltung:</p>
+      <ul>
+      <li><strong>🎯 Kalibrierungs-Modus:</strong> Ein zuschaltbarer 1mm-Rahmen hilft dabei, den Ausdruck millimetergenau auf dem Etikett zu prüfen.</li>
+      <li><strong>⚖️ Druck-Skalierung:</strong> Feinjustierung der Ausgabegröße in Prozent (z.B. 99.5%). Damit lassen sich hardwarebedingte Abweichungen des Druckers perfekt ausgleichen.</li>
+      <li><strong>↕️ Senkrechter Text:</strong> Texte und Zahlen können nun per Klick senkrecht (gestapelt) angeordnet werden – ideal für schmale Randbereiche.</li>
+      <li><strong>🎨 Erweiterte Formatierung:</strong> Neue Editor-Optionen für <strong>Fett</strong> und <em>Kursiv</em> bei allen Textobjekten.</li>
+      <li><strong>Barcode-Tuning:</strong> Die Klartextzeile unter dem Barcode kann jetzt pro Objekt ein- oder ausgeblendet werden.</li>
+      <li><strong>💾 Pro-Projekt-Settings:</strong> Alle Kalibrierungs- und Formatierungseinstellungen werden dauerhaft im Projekt gespeichert.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-211">✨ Neuheiten in Version 2.1.1</h2>
+      <p>Dieses Wartungs- und Performance-Update verbessert die Stabilität auf modernen Server-Umgebungen:</p>
+      <ul>
+      <li><strong>🚀 High-Performance Datentabelle:</strong> Die Suche in großen Datensätzen (13.000+ Zeilen) friert die Webseite nicht mehr ein. Durch intelligentes <em>Debouncing</em> und optimierte DOM-Zugriffe reagiert der Filter jetzt extrem flüssig.</li>
+      <li><strong>🐘 PHP 8.4 Ready:</strong> Kompatibilitäts-Fix für <code>str_getcsv()</code>. Die Applikation ist nun für zukünftige PHP-Versionen gerüstet und wirft keine &quot;Deprecated&quot;-Warnungen mehr.</li>
+      <li><strong>📂 Pfad-Stabilität:</strong> Verbesserte CSV-Parsing-Logik, die nun auch problemlos Backslashes (z.B. in Windows-Dateipfaden) innerhalb der Datenfelder verarbeitet.</li>
+      <li><strong>🏷️ Neues Markendesign:</strong> Integration des offiziellen <code>barcode_green.ico</code> Favicons für alle Ansichten.</li>
+      <li><strong>🧹 Datenbank-Cleanup:</strong> Bereinigung veralteter SQL-Befehle im Reload-Prozess für eine saubere Struktur.</li>
+      </ul>
+      <hr>
+      <h2 id="-neuheiten-in-version-210">✨ Neuheiten in Version 2.1.0</h2>
+      <p>Dieses Update fokussierte sich auf maximale Benutzerfreundlichkeit im Designer und volle Unterstützung für Spezial-Hardware:</p>
+      <ul>
+      <li><strong>⚡ Aktiver Designer:</strong> Formate (Breite/Höhe) ändern sich jetzt in Echtzeit beim Tippen. Kein Neuladen mehr nötig!</li>
+      <li><strong>🔍 Power-Zoom (Auto-Scaling):</strong> Winzige Etiketten (z.B. 12mm P-Touch) werden automatisch bis zu 5-fach vergrößert dargestellt.</li>
+      <li><strong>🔳 QR-Code Perfektion:</strong> Automatische 1:1 Synchronisierung und verzerrungsfreies Rendering (kein &quot;Eiern&quot; mehr).</li>
+      <li><strong>📎 Vorlagen-Gedächtnis:</strong> Das System merkt sich nun pro Projekt, welches Template (Zweckform, Brother etc.) als Basis dient.</li>
+      <li><strong>🌀 Rollendrucker-Support:</strong> Die Druckvorschau erkennt automatisch Endlos-Rollen (1x1 Layout) und blendet störende Bogen-Optionen aus.</li>
+      <li><strong>🛡️ Cache-Isolation:</strong> Projekte beeinflussen sich nicht mehr gegenseitig durch Browser-Autovervollständigung.</li>
+      </ul>
+      <hr>
+      <h2 id="-das-mentale-modell-fuer-anwender-ein-projekt--ein-design">🛠️ Das mentale Modell für Anwender: Ein Projekt = Ein Design</h2>
+      <p>Beim Schulen und Einweisen von neuen Benutzern ist dieses Prinzip das Wichtigste:</p>
+      <p><strong>Was ist ein Projekt?</strong><br>
+      Ein Projekt ist praktisch wie ein <strong>&quot;Ordner für einen bestimmten Einsatzzweck&quot;</strong> (z.B. ein Projekt namens <em>&quot;Große Paletten-Etiketten&quot;</em> und ein anderes namens <em>&quot;Kleine Regal-Labels&quot;</em>).</p>
+      <p>In so einem Projekt merkt sich die Software dauerhaft genau drei Dinge:</p>
+      <ol>
+      <li><strong>Das Zubehör (Bogen-Layout)</strong>: Wie groß ist das Etikett? (z.B. 100x50mm, 3-spaltig auf A4).</li>
+      <li><strong>Das Aussehen (Design-Layout)</strong>: Wo steht der Text? Wo ist der Barcode? Welche Schriftgröße wird genutzt? (inkl. der Platzhalter).</li>
+      <li><strong>Die CSV-Spalten (Felder)</strong>: Welche Daten gibt es grundsätzlich zum Einfügen? (Die Kopfzeilen der CSV Datei werden als Platzhalter wie <code>[~MatNr~]</code> in der Oberfläche bereitgestellt).</li>
+      </ol>
+      <p><strong>Was ist ein Projekt explizit <em>nicht</em>?</strong><br>
+      Es ist <strong>kein Datenarchiv!</strong> Die hochgeladenen CSV-Listen mit den echten Artikelnummern oder Adressen werden <em>nicht</em> im Projekt für die Ewigkeit gespeichert. Sie sind &quot;Wegwerfware&quot; und verfliegen, sobald die Arbeit erledigt und der Tab geschlossen ist.</p>
+      <hr>
+      <h2 id="-der-taegliche-workflow-fuer-den-anwender">🔄 Der tägliche Workflow für den Anwender</h2>
+      <p>Wenn der Mitarbeiter seinen Dienst beginnt, sieht der Standard-Ablauf wie folgt aus:</p>
+      <ol>
+      <li><strong>Projekt auswählen:</strong><br>
+      Auf der Startseite wählt der Mitarbeiter den gewünschten Einsatzzweck (das fertige &quot;Projekt&quot;) aus.</li>
+      <li><strong>Daten &quot;reinwerfen&quot; (Reload CSV):</strong><br>
+      Er klickt rechts oben auf den Button <strong><code>Reload csv</code></strong> und lädt die heutige, tagesaktuelle Export-Liste (z.B. 13.000 Zeilen aus dem ERP-System) hoch.</li>
+      <li><strong>Auswählen &amp; Drucken:</strong><br>
+      Er sieht die Daten nun im Tab &quot;DATEN&quot;.</li>
+      </ol>
+      <ul>
+      <li>Er kann nach relevanten Texten filtern.</li>
+      <li>Er wählt per Checkbox genau die Artikel aus, für die physische Aufkleber benötigt werden (Tipp: Die Master-Checkbox im Tabellenkopf wählt alle an/ab).</li>
+      <li>Danach klickt er auf &quot;Drucken&quot;. Die Software generiert das PDF on-the-fly exakt aus der aktuellen Auswahl.</li>
+      </ul>
+      <ol start="4">
+      <li><strong>Flüchtiger Speicher &amp; Dauerhaftes Design:</strong><br>
+      Schließt der Mitarbeiter den Browser oder lässt die Session ablaufen, löschen sich die über 13.000 Artikeldaten automatisch aus dem aktiven Speicher. Es fallen keine Datenbank-Reste an. <strong>Das Wichtigste:</strong> Das Etiketten-Layout, die gewählte Vorlage (Template) und die Projekteinstellungen warten aber brav unverändert auf den Einsatz am nächsten Tag.</li>
+      <li><strong>Spezialfall: Rollendrucker (z.B. Brother P-Touch)</strong><br>
+      Bei Etiketten, die nur eine Spalte und eine Zeile haben (1x1), schaltet die Druckvorschau automatisch in den &quot;Endlos-Modus&quot;. Statt eines A4-Rasters sieht der Anwender eine klare Rollen-Vorschau ohne komplizierte Startpositions-Auswahl.</li>
+      </ol>
+      <p>💡 <strong>Muss für jede neue CSV-Datei ein neues Projekt angelegt werden?</strong><br>
+      <strong>Nein!</strong> Wenn die CSV-Datei denselben Aufbau hat (also dieselben Spaltenüberschriften wie gestern), lädt der Anwender sie einfach per <code>Reload csv</code> in das <em>bestehende</em> Projekt ein. Das dortige Design bleibt erhalten und wendet sich automatisch fehlerfrei auf die tagesaktuellen Datenreihen an.</p>
+      <p>Erst wenn ein völlig neues Etikettenmaß verwendet werden soll oder eine grundlegend andere CSV-Liste bezogen wird, sollte ein neues Projekt in der Hauptansicht angelegt werden.</p>
+      <hr>
+      <h2 id="-vollautomatisches-platzhalter-system-header">🪄 Vollautomatisches Platzhalter-System (Header)</h2>
+      <p>Eine große Arbeitserleichterung für Anwender: <strong>Platzhalter und Spaltennamen müssen zu keinem Zeitpunkt manuell eingetippt oder konfiguriert werden!</strong> Das System ist darauf ausgelegt, sich selbst zu konfigurieren:</p>
+      <ol>
+      <li><strong>Beim ersten Import:</strong> Das System liest vollautomatisch die oberste Zeile (den Header) der hochgeladenen CSV-Datei aus. Daraus generiert es für den Designer sofort fertige Klick-Bausteine (z.B. <code>[~MatNr~]</code>, <code>[~MHD~]</code>).</li>
+      <li><strong>Fehlertoleranz:</strong> Sollte eine CSV-Spalte keine Überschrift haben, vergibt das System automatisch Notnamen wie &quot;Spalte 3&quot;, damit keine Daten verloren gehen.</li>
+      <li><strong>Lebende Updates (&quot;Reload CSV&quot;):</strong> Ändert sich der Export im ERP-System und es kommt morgen eine Spalte <code>Gewicht</code> hinzu? Kein Problem: Durch den Neulade-Vorgang (&quot;Reload CSV&quot;) bemerkt das System das Update sofort und der neue Platzhalter <code>[~Gewicht~]</code> steht im Etikettendesigner ohne jeden Handgriff zur Verfügung.</li>
+      </ol>
         </body>
         </html>

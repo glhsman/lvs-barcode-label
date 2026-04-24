@@ -53,12 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($hasCsv) {
             // 2. CSV einlesen und Kodierung behandeln
             $csvData = file_get_contents($file);
-
-            // Erkennung der Kodierung (Windows-1252 ist bei CSV aus Excel oft Standard)
-            $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
-            if ($encoding !== 'UTF-8') {
-                $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
-            }
+            $csvData = normalize_csv_to_utf8($csvData);
 
             // Zeilen trennen
             $lines = explode("\n", str_replace("\r", "", $csvData));
@@ -80,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // 4. Datensätze in die Session laden
-            $_SESSION["csv_raw_13k_project_{$projectId}"] = file_get_contents($file);
+            $_SESSION["csv_raw_13k_project_{$projectId}"] = $csvData;
             $_SESSION["csv_selected_{$projectId}"] = [];
             $recordCount = count(array_filter($lines, 'trim'));
         }

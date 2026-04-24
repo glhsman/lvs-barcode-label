@@ -1,8 +1,19 @@
-# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.7.1
+# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.7.2
 
 Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
 
 Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+
+---
+
+## ✨ Neuheiten in Version 2.7.2
+Dieses Update verbessert die Drucklogik auf A4-Bögen und behebt ein Encoding-Problem bei CSV-Dateien aus Windows/Excel:
+
+*   **🧾 Startposition im PDF korrigiert:** Beim Druck auf teilweise verwendete Etikettenbögen werden die Felder vor der gewählten Startposition nicht mehr als leere Platzhalter-Etiketten gerendert. Der erste Datensatz beginnt nun exakt auf der gewählten Position.
+*   **🔤 Umlaute aus Windows-CSV korrekt:** CSV-Dateien mit deutschen Umlauten aus Windows-/Excel-Exporten werden jetzt robust nach UTF-8 normalisiert. Zeichen wie `ü`, `ä`, `ö` und `ß` erscheinen dadurch in Tabelle, Druckvorschau und PDF zuverlässig korrekt.
+*   **📄 Kopiendruck für statische Projekte:** Projekte ohne CSV-Basis können jetzt ein identisches Etikett mehrfach auf einem Etikettenbogen ausgeben. Die neue Eingabe **„Anzahl Kopien“** befindet sich direkt in der Druckkonfiguration.
+*   **📐 Kopien-Hinweis in der Druckmaske:** Unter dem Kopienfeld wird live angezeigt, wie viele Etiketten ein Bogen enthält und wie viele Bögen bei der eingegebenen Kopienzahl ungefähr erzeugt werden.
+*   **🎯 Startposition auch für Kopiendruck:** Bei statischen Projekten mit mehreren Kopien wirkt die Startposition jetzt ebenfalls korrekt, aber nur auf dem ersten Blatt. Alle folgenden Bögen beginnen wieder bei Etikett 1.
 
 ---
 

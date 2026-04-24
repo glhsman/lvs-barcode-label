@@ -25,8 +25,7 @@ $records = [];
 $records = [];
 if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
-    $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
-    if ($encoding !== 'UTF-8') $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
+    $csvData = normalize_csv_to_utf8($csvData);
     $lines = explode("\n", str_replace("\r", "", $csvData));
     $headerLine = array_shift($lines);
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
@@ -258,7 +257,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.6.0-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.7.2-STABLE</div>
                         </div>
                     </div>
                 </div>

@@ -36,8 +36,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $fields = $stmt->fetchAll();
 
     $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
-    $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
-    if ($encoding !== 'UTF-8') $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
+    $csvData = normalize_csv_to_utf8($csvData);
     $lines = explode("\n", str_replace("\r", "", $csvData));
     $headerLine = array_shift($lines);
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
@@ -76,6 +75,10 @@ foreach ($selectedRecords as $record) {
         }
     }
 }
+
+$hasCsvData = isset($_SESSION["csv_raw_13k_project_{$projectId}"]);
+$labelsPerPage = (int)$format['cols'] * (int)$format['rows'];
+$defaultCopies = 1;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -196,6 +199,15 @@ foreach ($selectedRecords as $record) {
                         Dies ist nützlich, wenn du einen bereits teilweise bedruckten A4-Bogen verwendest.
                     </p>
 
+                    <?php if (!$hasCsvData): ?>
+                    <div class="mb-3">
+                        <label for="copiesInput" class="form-label text-secondary small mb-1">Anzahl Kopien (gleicher Inhalt)</label>
+                        <input type="number" id="copiesInput" class="form-control" min="1" max="5000" value="<?= $defaultCopies ?>">
+                        <div class="form-text mt-1" style="font-size: 0.75rem;">Nur für Projekte ohne CSV: Das gleiche Etikett wird mehrfach auf dem Bogen platziert.</div>
+                        <div id="copiesHint" class="small text-secondary mt-1"></div>
+                    </div>
+                    <?php endif; ?>
+
                     <div class="alert alert-info py-2 small d-flex align-items-center">
                         <i class="bi bi-info-circle-fill me-2"></i>
                         <span>Papier-Startposition: <strong>Aufkleber Nr. <span id="startIndexLabel">1</span></strong></span>
@@ -261,6 +273,7 @@ foreach ($selectedRecords as $record) {
 
 <script>
 let startIndex = 1;
+const labelsPerPage = <?= $labelsPerPage ?>;
 
 function setStartIndex(idx) {
     startIndex = idx;
@@ -275,13 +288,33 @@ function setStartIndex(idx) {
     });
 }
 
+function updateCopiesHint() {
+    const input = document.getElementById('copiesInput');
+    const hint = document.getElementById('copiesHint');
+    if (!input || !hint) return;
+
+    let copies = parseInt(input.value || '1', 10);
+    if (Number.isNaN(copies) || copies < 1) copies = 1;
+    const pages = Math.ceil(copies / Math.max(1, labelsPerPage));
+
+    hint.textContent = `Ein Bogen = ${labelsPerPage} Etiketten. Bei ${copies} Kopien werden ca. ${pages} Bogen erzeugt.`;
+}
+
 // Initialisierung
 setStartIndex(1);
+updateCopiesHint();
+
+const copiesInput = document.getElementById('copiesInput');
+if (copiesInput) {
+    copiesInput.addEventListener('input', updateCopiesHint);
+}
 
 function startPrinting() {
     const urlParams = new URLSearchParams(window.location.search);
     const cal = urlParams.get('cal') || 0;
-    const url = `generate_pdf.php?id=<?= $projectId ?>&start=${startIndex}&cal=${cal}`;
+    const copiesField = document.getElementById('copiesInput');
+    const copies = copiesField ? Math.max(1, parseInt(copiesField.value || '1', 10)) : 1;
+    const url = `generate_pdf.php?id=<?= $projectId ?>&start=${startIndex}&cal=${cal}&copies=${copies}`;
     window.open(url, '_blank');
 }
 </script>

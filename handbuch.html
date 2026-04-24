@@ -25,6 +25,7 @@
             color: var(--text);
             line-height: 1.6;
             padding-bottom: 50px;
+            scroll-behavior: smooth;
         }
 
         .glass-card {
@@ -176,12 +177,12 @@
         }
 
         .index-nav {
-            position: sticky;
-            top: 20px;
             padding: 20px;
             background: rgba(30, 41, 59, 0.5);
             border-radius: 16px;
             border: 1px solid var(--glass-border);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
         }
 
         .nav-item-manual {
@@ -222,6 +223,9 @@
         @media (min-width: 1200px) {
             .sidebar-manual {
                 display: block;
+                position: sticky;
+                top: 20px;
+                align-self: flex-start;
             }
         }
 
@@ -271,8 +275,6 @@
                     <li class="nav-item-manual"><a href="#drucken" class="nav-link-manual">Formate & Druck</a></li>
                     <li class="nav-item-manual"><a href="#tipps" class="nav-link-manual">FAQ & Profi-Tipps</a></li>
                 </ul>
-                <hr class="my-3">
-                <a href="index.php" class="btn btn-outline-info btn-sm w-100 rounded-pill mt-2">Zur Applikation</a>
             </div>
         </div>
 
@@ -285,14 +287,42 @@
                             <i class="bi bi-upc-scan text-white" style="font-size: 2.5rem;"></i>
                         </div>
                     </div>
-                    <div class="badge-version">Aktuelle Version v2.7.0</div>
+                    <div class="badge-version">Aktuelle Version v2.7.2</div>
                     <h1>Umfassendes Handbuch</h1>
-                    <p class="text-muted fs-5">LVS Barcode- & Etikettensystem</p>
+                    <p class="text-muted fs-5">Drinkport KG Barcode- & Etikettensystem</p>
                 </header>
 
                 <p class="lead text-center mb-5 mt-4">
                     Dieses System wurde für den Hochgeschwindigkeits-Druck von Barcode-Etiketten in Lagerumgebungen entwickelt. Es arbeitet <strong>datenschutzkonform</strong> direkt im Browser-Speicher und benötigt keine permanente Datenhaltung für Ihre CSV-Listen.
                 </p>
+
+                <section id="neuheiten">
+                    <h2>Neu in Version 2.7.2</h2>
+
+                    <div class="feature-item">
+                        <div class="feature-icon text-info"><i class="bi bi-filetype-csv"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Windows-/Excel-CSV mit korrekten Umlauten</h6>
+                            <p class="small text-muted mb-0">CSV-Dateien aus Windows und Excel werden robuster nach UTF-8 normalisiert. Umlaute wie <strong>ä, ö, ü</strong> sowie <strong>ß</strong> werden dadurch in Tabelle, Druckvorschau und PDF zuverlässig korrekt dargestellt.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon text-primary"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Saubere Startposition auf A4-Bögen</h6>
+                            <p class="small text-muted mb-0">Wenn Sie einen teilweise verwendeten Etikettenbogen weiterverwenden, werden die Etiketten vor der gewählten Startposition nicht mehr sichtbar mit Platzhaltern gerendert. Die Startposition wirkt nur auf das <strong>erste Blatt</strong>, alle folgenden Bögen beginnen wieder bei Etikett 1.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon text-success"><i class="bi bi-files"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Kopiendruck für statische Projekte</h6>
+                            <p class="small text-muted mb-0">Projekte ohne CSV-Basis können jetzt über das Feld <strong>„Anzahl Kopien“</strong> mehrfach auf einem Etikettenbogen ausgegeben werden. Unter dem Feld sehen Sie live, wie viele Etiketten ein Bogen enthält und wie viele Bögen ungefähr erzeugt werden.</p>
+                        </div>
+                    </div>
+                </section>
 
                 <section id="konzept">
                     <h2>1. Das mentale Modell: Projekt vs. Daten</h2>
@@ -324,6 +354,11 @@
                             <li>Sobald Sie den Browser schließen, werden diese Artikeldaten automatisch gelöscht.</li>
                         </ul>
                     </div>
+
+                    <div class="info-box">
+                        <h6 class="fw-bold"><i class="bi bi-file-earmark-text me-2 text-info"></i>Statische Projekte ohne CSV</h6>
+                        <p class="small mb-0">Ein Projekt kann auch <strong>ohne CSV-Datei</strong> angelegt werden. In diesem Fall arbeitet es wie eine feste Etikettenvorlage mit immer gleichem Inhalt. Für solche Projekte kann in der Druckansicht zusätzlich eine <strong>Kopienzahl</strong> angegeben werden.</p>
+                    </div>
                 </section>
 
                 <section id="workflow">
@@ -342,7 +377,7 @@
                         <div class="step-number">2</div>
                         <div>
                             <h5 class="fw-bold text-white">Frische Daten laden</h5>
-                            <p class="small text-muted">Nutzen Sie oben rechts den Button <span class="badge bg-warning text-dark px-2">Reload csv</span>, um Ihre aktuelle Export-Datei hochzuladen.</p>
+                            <p class="small text-muted">Nutzen Sie oben rechts den Button <span class="badge bg-warning text-dark px-2">Reload csv</span>, um Ihre aktuelle Export-Datei hochzuladen. Bei statischen Projekten ohne CSV entfällt dieser Schritt.</p>
                         </div>
                     </div>
 
@@ -358,7 +393,7 @@
                         <div class="step-number">4</div>
                         <div>
                             <h5 class="fw-bold text-white">Druckvorschau & PDF</h5>
-                            <p class="small text-muted">Klicken Sie auf <strong>"Drucken"</strong>. Passen Sie ggf. die Startposition an (bei Bögen) und klicken Sie auf "Jetzt Drucken (PDF)".</p>
+                            <p class="small text-muted">Klicken Sie auf <strong>"Drucken"</strong>. Bei A4-Bögen können Sie bei Bedarf eine <strong>Startposition</strong> wählen. Bei statischen Projekten ohne CSV können Sie zusätzlich eine <strong>Anzahl Kopien</strong> eingeben. Danach klicken Sie auf <strong>"Jetzt Drucken (PDF)"</strong>.</p>
                         </div>
                     </div>
                 </section>
@@ -374,6 +409,7 @@
                         <li>Klicken Sie auf <strong>"+ Text"</strong> oder <strong>"+ Barcode"</strong>, um ein neues Element auf dem Etikett zu platzieren.</li>
                         <li><strong>Drag & Drop:</strong> Ziehen Sie das Objekt mit der Maus an die gewünschte Position.</li>
                         <li><strong>Bearbeiten:</strong> Mit einem <strong>Doppelklick</strong> auf das Objekt (oder Klick auf das ✏️-Icon) öffnen sich die Eigenschaften.</li>
+                        <li><strong>Wiederherstellen:</strong> Über den Button <strong>"Wiederherstellen"</strong> im Designer-Kopfbereich laden Sie jederzeit den zuletzt gespeicherten Stand aus der Datenbank zurück.</li>
                     </ul>
 
                     <h3>Barcode-Typen</h3>
@@ -402,6 +438,13 @@
                         <div>
                             <h6 class="fw-bold mb-1">Ausrichtungs-Toolbar</h6>
                             <p class="small text-muted mb-0">Nutze die Icons im Kopfbereich zum linksbündigen Ausrichten, Angleichen der Breite oder zum gleichmäßigen vertikalen Verteilen von Elementen.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon text-warning"><i class="bi bi-layers"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Ebenen-Steuerung</h6>
+                            <p class="small text-muted mb-0">Mit den Buttons <strong>▲</strong> und <strong>▼</strong> in der Objekt-Toolbar verschieben Sie Elemente eine Ebene nach vorne oder hinten. Das ist besonders hilfreich bei überlappenden Text- und Barcode-Feldern.</p>
                         </div>
                     </div>
 
@@ -437,12 +480,25 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <h6 class="fw-bold">Bogen-Layouts (z.B. Zweckform)</h6>
-                            <p class="small text-muted">Geben Sie die Anzahl der Spalten und Zeilen pro Blatt an. Die Druckvorschau lässt Sie dann wählen, an welcher Stelle auf dem Blatt der Druck beginnen soll.</p>
+                            <p class="small text-muted">Geben Sie die Anzahl der Spalten und Zeilen pro Blatt an. Die Druckvorschau lässt Sie dann wählen, an welcher Stelle auf dem Blatt der Druck beginnen soll. Diese Startposition gilt nur für das <strong>erste Blatt</strong>.</p>
                         </div>
                         <div class="col-md-6">
                             <h6 class="fw-bold">Rollen-Layouts (z.B. Brother)</h6>
                             <p class="small text-muted">Stellen Sie <strong>Spalten: 1</strong> und <strong>Zeilen: 1</strong> ein. Das System erkennt automatisch, dass es sich um eine Endlosrolle handelt und optimiert die Ansicht.</p>
                         </div>
+                    </div>
+
+                    <div class="feature-item mt-4">
+                        <div class="feature-icon text-success"><i class="bi bi-files"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Anzahl Kopien für statische Projekte</h6>
+                            <p class="small text-muted mb-0">Wenn ein Projekt ohne CSV erstellt wurde, erscheint in der Druckkonfiguration das Feld <strong>„Anzahl Kopien“</strong>. Damit lässt sich ein identisches Etikett mehrfach auf einem A4-Bogen ausgeben, ohne denselben Datensatz mehrfach anlegen zu müssen.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <h6 class="fw-bold"><i class="bi bi-info-circle me-2 text-info"></i>Live-Hinweis für Bögen</h6>
+                        <p class="small mb-0">Unter dem Kopienfeld sehen Sie sofort, wie viele Etiketten ein Bogen enthält und wie viele Bögen bei der gewählten Kopienzahl ungefähr erzeugt werden.</p>
                     </div>
 
                     <div class="warning-box">
@@ -544,7 +600,7 @@
                             </h2>
                             <div id="f7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body small text-muted">
-                                    Ja, vollumfänglich. Das System nutzt den modernen <strong>UTF-8 Standard</strong>. Es erkennt beim Upload automatisch, ob Ihre Datei von einem alten Windows-System (Excel) kommt und konvertiert Umlaute (ä, ö, ü, ß) automatisch korrekt für den Druck.
+                                    Ja, vollumfänglich. Das System nutzt den modernen <strong>UTF-8 Standard</strong>. Es erkennt beim Upload automatisch, ob Ihre Datei von einem Windows-/Excel-Export stammt und normalisiert Umlaute (ä, ö, ü, ß) robust für Tabelle, Druckvorschau und PDF.
                                 </div>
                             </div>
                         </div>
@@ -561,12 +617,25 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Q9 -->
+                        <div class="accordion-item bg-transparent text-white border-secondary">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed bg-transparent text-white" type="button" data-bs-toggle="collapse" data-bs-target="#f9">
+                                    Kann ich ein statisches Etikett mehrfach auf einem Bogen drucken?
+                                </button>
+                            </h2>
+                            <div id="f9" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body small text-muted">
+                                    Ja. Wenn ein Projekt <strong>ohne CSV-Datei</strong> angelegt wurde, erscheint in der Druckansicht das Feld <strong>„Anzahl Kopien“</strong>. Damit können Sie dasselbe Etikett mehrfach auf einem oder mehreren Bögen drucken. Wenn zusätzlich eine Startposition gewählt wird, gilt diese nur für das erste Blatt.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <footer>
                     <p>© 2026 Drinkport KG - Barcode & Etiketten-System. IT-Support kontaktieren bei Fragen zur Einrichtung.</p>
-                    <div class="mt-2" style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.7.0</div>
+                    <div class="mt-2" style="font-size: 0.7rem; opacity: 0.5;">UI-System-STABLE v2.7.2</div>
                 </footer>
             </div>
         </div>

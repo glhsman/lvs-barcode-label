@@ -29,4 +29,36 @@ try {
 } catch (PDOException $e) {
     die("Datenbankverbindung fehlgeschlagen: " . $e->getMessage());
 }
+
+/**
+ * Normalisiert CSV-Rohdaten auf UTF-8.
+ * Verhindert Mojibake bei UTF-8/Windows-1252/ISO-8859-1 und behandelt BOM/UTF-16.
+ */
+function normalize_csv_to_utf8(string $csvData): string
+{
+    if ($csvData === '') {
+        return $csvData;
+    }
+
+    // UTF-8 BOM entfernen
+    if (strncmp($csvData, "\xEF\xBB\xBF", 3) === 0) {
+        $csvData = substr($csvData, 3);
+    }
+
+    // UTF-16 BOM erkennen und korrekt konvertieren
+    if (strncmp($csvData, "\xFF\xFE", 2) === 0) {
+        return mb_convert_encoding(substr($csvData, 2), 'UTF-8', 'UTF-16LE');
+    }
+    if (strncmp($csvData, "\xFE\xFF", 2) === 0) {
+        return mb_convert_encoding(substr($csvData, 2), 'UTF-8', 'UTF-16BE');
+    }
+
+    // Bereits valides UTF-8 unverändert übernehmen
+    if (preg_match('//u', $csvData) === 1) {
+        return $csvData;
+    }
+
+    $encoding = mb_detect_encoding($csvData, ['Windows-1252', 'ISO-8859-1'], true) ?: 'Windows-1252';
+    return mb_convert_encoding($csvData, 'UTF-8', $encoding);
+}
 ?>

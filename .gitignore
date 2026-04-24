@@ -17,6 +17,8 @@ uploads/
 # Medien & Dokumente
 images/
 *.docx
+*.mp3
+*.m4a
 
 # OS-Specific
 .DS_Store

@@ -4,6 +4,7 @@ require_once 'config.php';
 
 $projectId = $_GET['id'] ?? null;
 $startIndex = isset($_GET['start']) ? (int)$_GET['start'] : 1;
+$copies = isset($_GET['copies']) ? (int)$_GET['copies'] : 1;
 $showCalibration = isset($_GET['cal']) && $_GET['cal'] == '1';
 
 if (!$projectId) die("Ungültige Projekt-ID");
@@ -32,8 +33,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $fields = $stmt->fetchAll();
 
     $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
-    $encoding = mb_detect_encoding($csvData, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
-    if ($encoding !== 'UTF-8') $csvData = mb_convert_encoding($csvData, 'UTF-8', $encoding ?: 'Windows-1252');
+    $csvData = normalize_csv_to_utf8($csvData);
     $lines = explode("\n", str_replace("\r", "", $csvData));
     $headerLine = array_shift($lines);
     $delimiter = strpos($headerLine, ';') !== false ? ';' : ',';
@@ -106,27 +106,31 @@ if (empty($records)) {
         echo '<div style="padding:50px; text-align:center;"><h2>Keine Datensätze ausgewählt.</h2><p>Bitte haken Sie in der Projektansicht die gewünschten Zeilen an.</p></div>';
         exit;
     }
-    // Kein CSV – leeres Projekt, ein statisches Etikett rendern
-    $records = [null];
+    // Kein CSV – identisches Etikett mehrfach rendern (Kopien)
+    $copyCount = max(1, min($copies, 5000));
+    $records = array_fill(0, $copyCount, null);
 }
 
 $labelsPerPage = $format['cols'] * $format['rows'];
 $printQueue = array_values($records);
+$startOffset = max(0, $startIndex - 1);
 
-// Start-Position berücksichtigen (Leere Etiketten am Anfang)
-for ($i = 1; $i < $startIndex; $i++) array_unshift($printQueue, null);
-
-$pageCount = 0;
 $pageOpen = false;
+$currentPage = -1;
 foreach ($printQueue as $idx => $record) {
-    if ($idx % $labelsPerPage == 0) {
+    $layoutIndex = $idx + $startOffset;
+    $targetPage = (int)floor($layoutIndex / $labelsPerPage);
+
+    if (!$pageOpen || $targetPage !== $currentPage) {
         if ($pageOpen) echo '</div>';
         echo '<div class="page">';
         $pageOpen = true;
+        $currentPage = $targetPage;
     }
 
-    $col = $idx % $format['cols'];
-    $row = floor(($idx % $labelsPerPage) / $format['cols']);
+    $indexOnPage = $layoutIndex % $labelsPerPage;
+    $col = $indexOnPage % $format['cols'];
+    $row = floor($indexOnPage / $format['cols']);
 
     $left = $format['margin_left_mm'] + ($col * ($format['width_mm'] + $format['col_gap_mm']));
     $top = $format['margin_top_mm'] + ($row * ($format['height_mm'] + $format['row_gap_mm']));
@@ -141,7 +145,7 @@ foreach ($printQueue as $idx => $record) {
         $frameH = $format['height_mm'] - 1;
         echo "<div class='calibration-frame' style='left:0.5mm; top:0.5mm; width:{$frameW}mm; height:{$frameH}mm;'></div>";
     }
-    if ($record !== null || !empty($objects)) {
+    if ($record !== null || !$hasCsvData) {
         foreach ($objects as $obj) {
             $p = $obj['properties'];
             if (is_string($p)) $p = json_decode($p, true) ?: [];
