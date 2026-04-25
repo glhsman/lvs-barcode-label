@@ -1,6 +1,8 @@
-Im Designer die Möglichkeit einbauen, mit Strg. + Klick mehrere Elemente zu wählen und sie einheitlich am weitestens links angeordneten Element auszurichten. Eventuell auch einen einheitlichen verikalen Abstand zu erhalten und ich zu erhöhen oder zu veringern.
-Möglichkeit, alle Elemente eine einheitliche Breite anhand des breitesten Elemntes zu geben.
-Texte im Textelement auch link, rechts und zentriert anzuordnen. Aktuell immer zentriert.
-Einbau von Barcode EAN8.
-Darauf achten, das bestehende Funktionen dadurch nicht entfernt werden.
-Einbau eines favicon.ico im Admin-Bereich. Das Icon wird im Ordner /admin/ abgelegt.
+Zuerst implementieren (Teil 1):
+Refactoring der project_view.php
+Virtuelle Tabellen-Anzeige (Virtual Scrolling)
+Zentralisiertes API-Handling
+
+Wenn erfolgreich getestet, dann (Teil 2):
+Snap-to-Grid (Raster-Einrasten)
+verschiedene Fonts für Texte

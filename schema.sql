@@ -100,4 +100,15 @@ CREATE TABLE IF NOT EXISTS global_label_templates (
     UNIQUE INDEX idx_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ─── Manuelle Datensätze (Alternative zu CSV) ──────────────────────────────────
+CREATE TABLE IF NOT EXISTS project_data_records (
+  `id`          INT AUTO_INCREMENT PRIMARY KEY,
+  `project_id`  INT NOT NULL,
+  `data_json`   LONGTEXT NOT NULL,
+  `created_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  INDEX idx_project_created (project_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 SET FOREIGN_KEY_CHECKS = 1;

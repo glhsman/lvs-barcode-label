@@ -28,14 +28,14 @@ $stmt = $pdo->prepare("SELECT * FROM label_objects WHERE project_id = ? ORDER BY
 $stmt->execute([$projectId]);
 $objects = $stmt->fetchAll();
 
-// Gewählte Datensätze laden (aus Session!)
+// Gewählte Datensätze laden
 $records = [];
-if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
-    // Projekt-Felder laden
-    $stmt = $pdo->prepare("SELECT * FROM project_fields WHERE project_id = ? ORDER BY position ASC");
-    $stmt->execute([$projectId]);
-    $fields = $stmt->fetchAll();
+// Projekt-Felder laden (werden für beide Modi benötigt)
+$stmt = $pdo->prepare("SELECT * FROM project_fields WHERE project_id = ? ORDER BY position ASC");
+$stmt->execute([$projectId]);
+$fields = $stmt->fetchAll();
 
+if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
     $csvData = normalize_csv_to_utf8($csvData);
     $lines = explode("\n", str_replace("\r", "", $csvData));
@@ -44,7 +44,7 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
 
     foreach ($lines as $idx => $line) {
         $selected = $_SESSION["csv_selected_{$projectId}"][$idx] ?? false;
-        if (!$selected) continue; // Nur gewählte drucken!
+        if (!$selected) continue; 
 
         $line = trim($line);
         if (!$line) continue;
@@ -55,6 +55,24 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
             $records[$idx][$field['name']] = $row[$colIdx] ?? '';
         }
     }
+} else {
+    // DB Modus
+    $fieldMap = [];
+    foreach($fields as $f) $fieldMap[$f['id']] = $f['name'];
+
+    $stmt = $pdo->prepare("SELECT * FROM project_data_records WHERE project_id = ? ORDER BY id ASC");
+    $stmt->execute([$projectId]);
+    $dbRows = $stmt->fetchAll();
+    foreach ($dbRows as $row) {
+        $selected = $_SESSION["db_selected_{$projectId}"][$row['id']] ?? true;
+        if (!$selected) continue;
+        $data = json_decode($row['data_json'], true) ?? [];
+        $mappedData = [];
+        foreach($data as $fid => $val) {
+            if(isset($fieldMap[$fid])) $mappedData[$fieldMap[$fid]] = $val;
+        }
+        $records[$row['id']] = $mappedData;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -63,9 +81,10 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     <meta charset="UTF-8">
     <title>Druckvorschau - <?= htmlspecialchars($project['name']) ?></title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
         @page { size: <?= $pageWidthMm ?>mm <?= $pageHeightMm ?>mm; margin: 0; }
-        body { margin: 0; padding: 0; background: #f0f0f0; font-family: Arial, sans-serif; }
+        body { margin: 0; padding: 0; background: #f0f0f0; font-family: 'Outfit', Arial, sans-serif; }
         .page {
             width: <?= $pageWidthMm ?>mm; height: <?= $pageHeightMm ?>mm; background: white; margin: <?= $isRollFormat ? '0 auto' : '10mm auto' ?>;
             position: relative; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.2);
@@ -173,14 +192,15 @@ foreach ($printQueue as $idx => $record) {
 
             if ($obj['type'] === 'text') {
                 $fs = $p['font_size'] ?? 10;
+                $ff = $p['font_family'] ?? "'Outfit', sans-serif";
                 $bold = !empty($p['bold']) ? 'font-weight:bold;' : '';
                 $italic = !empty($p['italic']) ? 'font-style:italic;' : '';
                 $vClass = !empty($p['vertical']) ? 'text-vertical' : '';
                 $textAlign = $p['text_align'] ?? 'center';
-                echo "<div class='label-object $vClass text-{$textAlign}' style='{$style} font-size:{$fs}pt; {$bold} {$italic}'>".htmlspecialchars($txt)."</div>";
+                echo "<div class='label-object $vClass text-{$textAlign}' style='{$style} font-size:{$fs}pt; font-family:{$ff}; {$bold} {$italic}'>".htmlspecialchars($txt)."</div>";
             } elseif ($obj['type'] === 'image') {
                 $imgData = $p['image_data'] ?? '';
-                // Sicherheitspr\u00fcfung: nur erlaubte Data-URLs
+                // Sicherheitsprüfung: nur erlaubte Data-URLs
                 if ($imgData && (strncmp($imgData, 'data:image/jpeg;base64,', 23) === 0 || strncmp($imgData, 'data:image/png;base64,', 22) === 0)) {
                     echo "<div class='label-object' style='{$style}'><img src='" . $imgData . "' style='width:100%; height:100%; object-fit:contain; display:block;'></div>";
                 }

@@ -1,8 +1,27 @@
-# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.8.0
+# Drinkport KG - Barcode & Etiketten-System (WebApp) - v2.9.0
 
-Dieses webbasierte System löst die vorherige Lösung ab und dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten.
+Dieses webbasierte System dient dem Erstellen, Verwalten und Hochgeschwindigkeits-Drucken von Barcode-Etiketten. 
 
-Die Applikation basiert auf einer blitzschnellen **In-Memory/Session-Architektur**. Riesige Datensätze belasten nicht mehr die Datenbank, sondern werden hochperformant direkt aus dem Arbeitsspeicher verarbeitet.
+Die Applikation bietet zwei Betriebsmodi:
+1.  🚀 **High-Speed CSV-Modus**: Blitzschnelle Verarbeitung riesiger Datensätze (13.000+ Zeilen) direkt aus dem Arbeitsspeicher (Session-Architektur).
+2.  🗄️ **Manueller Datenbank-Modus**: Dauerhaftes Speichern und Verwalten von Datensätzen direkt in der Datenbank (ideal für Projekte ohne ERP-Anbindung).
+
+---
+
+## ✨ Neuheiten in Version 2.9.0
+Dieses Major-Update macht das System fit für den produktiven Dauereinsatz mit maximaler Performance und Benutzerfreundlichkeit:
+
+*   **🗄️ Manueller Datensatz-Modus:** Projekte können nun ohne CSV betrieben werden. Datensätze werden dauerhaft in der Datenbank gespeichert und können direkt in der WebApp erstellt, bearbeitet und gelöscht werden.
+*   **📑 Dynamische Spalten-Verwaltung:** Im manuellen Modus lassen sich die Spalten (Header) frei definieren. Diese dienen sofort als Tabellenkopf und als Platzhalter (z.B. `[~Preis~]`) im Designer.
+*   **⚡ High-Speed Virtual Scrolling:** Flüssige Darstellung von 13.000+ Zeilen ohne jede Verzögerung. Es werden intelligent nur die Zeilen gerendert, die gerade im Sichtbereich sind.
+*   **↩️ Undo / Redo (Snapshot-System):** Bis zu 50 Schritte im Designer rückgängig machen oder wiederholen (<kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Strg</kbd>+<kbd>Y</kbd>).
+*   **📏 Smart Guides & Snap-to-Grid:** Intelligente violette Hilfslinien zur perfekten Ausrichtung an anderen Objekten sowie ein konfigurierbares Einrast-Raster (0.1mm bis 5mm).
+*   **🖋️ Multi-Font Support:** Volle Unterstützung für 7 moderne Schriftarten (Outfit, Inter, Roboto, Montserrat, Arial, Courier, Times) inklusive korrektem PDF-Rendering.
+*   **🛠️ UI-Polishing & UX:** 
+    *   **Doppelklick** zum Bearbeiten von Objekten.
+    *   **Tooltips** für alle Funktionen und Icons.
+    *   **Dirty-Indikator:** Ein pulsierender roter Rahmen am Speicher-Button warnt vor ungespeicherten Änderungen.
+    *   **Sync-Schutz:** Beim Markieren großer Datenmengen verhindert eine Sperre ("Sync..."), dass die Druckvorschau mit veralteten Daten aufgerufen wird.
 
 ---
 

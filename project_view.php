@@ -22,7 +22,7 @@ $fields->execute([$projectId]);
 $fields = $fields->fetchAll();
 
 $records = [];
-$records = [];
+$isDbMode = false;
 if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
     $csvData = $_SESSION["csv_raw_13k_project_{$projectId}"];
     $csvData = normalize_csv_to_utf8($csvData);
@@ -42,6 +42,15 @@ if (isset($_SESSION["csv_raw_13k_project_{$projectId}"])) {
         }
         $records[$idx] = ['selected' => $selected, 'values' => $values];
     }
+} else {
+    $isDbMode = true;
+    $stmt = $pdo->prepare("SELECT * FROM project_data_records WHERE project_id = ? ORDER BY id ASC");
+    $stmt->execute([$projectId]);
+    $dbRows = $stmt->fetchAll();
+    foreach ($dbRows as $row) {
+        $selected = $_SESSION["db_selected_{$projectId}"][$row['id']] ?? true;
+        $records[$row['id']] = ['selected' => $selected, 'values' => json_decode($row['data_json'], true) ?? [], 'db_id' => $row['id']];
+    }
 }
 $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY name ASC")->fetchAll();
 ?>
@@ -53,26 +62,10 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="style.css?v=<?= time() ?>">
-    <style>
-        body { font-family: 'Outfit', sans-serif; background: #0f172a; color: #f8fafc; overflow-x: hidden; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
-        #designer-canvas { background: #fff; background-image: radial-gradient(#ddd 1px, transparent 1px); background-size: 10px 10px; position: relative; margin: auto; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
-        .designer-object { position: absolute; border: 1px dashed #bbb; cursor: move; background: rgba(255,255,255,0.9); color: #000; display: flex; align-items: center; justify-content: center; overflow: visible !important; }
-        .designer-object:hover { border-color: #3b82f6; z-index: 1000 !important; }
-        .designer-object.selected { border: 2px solid #3b82f6; z-index: 1001 !important; }
-        .obj-controls { position: absolute; top: 0; right: 0; display: none; background: rgba(0,0,0,0.6); padding: 2px; border-radius: 0 0 0 8px; z-index: 2000; transform-origin: top right; }
-        .designer-object:hover .obj-controls, .designer-object.selected .obj-controls { display: flex; }
-        .obj-btn { width: 20px; height: 20px; border: none; border-radius: 3px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 2px; }
-        .sticky-top-table { position: sticky; top: 0; background: #1e293b; z-index: 10; border-bottom: 2px solid #3b82f6; }
-        .nav-pills .nav-link { color: #94a3b8; border-radius: 12px; transition: all 0.3s; padding: 10px 25px; font-weight: 500; font-size: 0.9rem; }
-        .nav-pills .nav-link.active { background: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
-        .form-label-sm { font-size: 0.72rem; color: #94a3b8; margin-bottom: 1px; display: block; }
-        .badge-placeholder { cursor: pointer; transition: all 0.2s; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
-        .badge-placeholder:hover { background: #3b82f6; color: white; transform: pady(-1px); }
-    </style>
+    <link rel="stylesheet" href="designer.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -155,7 +148,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                     <div class="row g-2 mb-3 align-items-end">
                         <div class="col-7">
                             <div class="form-check m-0">
-                                <input class="form-check-input bg-dark border-secondary" type="checkbox" name="show_calibration_border_<?= $projectId ?>" id="showCalibrationBorder" onchange="renderObjects()" <?= ($format['show_calibration_border'] ?? 0) ? 'checked' : '' ?>>
+                                <input class="form-check-input bg-dark border-secondary" type="checkbox" name="show_calibration_border_<?= $projectId ?>" id="showCalibrationBorder" <?= ($format['show_calibration_border'] ?? 0) ? 'checked' : '' ?>>
                                 <label class="form-check-label small text-info" for="showCalibrationBorder" style="cursor:pointer; font-size: 0.75rem;">
                                     <i class="bi bi-bounding-box-circles me-1"></i> Kalib.-Rahmen
                                 </label>
@@ -193,7 +186,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                     </span>
                     <?php endif; ?>
                     <button class="btn btn-outline-warning text-danger" style="border-color: #a3e635; color: #ef4444 !important; background: transparent; padding: 6px 20px;" onclick="document.getElementById('csvUploadInput').click()">
-                        Reload csv
+                        <?= empty($project['csv_filename']) ? 'CSV hochladen' : 'Reload csv' ?>
                     </button>
                 </div>
                 <form id="csvReloadForm" style="display:none;" action="reload_csv.php" method="POST" enctype="multipart/form-data">
@@ -205,28 +198,37 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
             <!-- Tab Content -->
             <div class="tab-content" id="pills-tabContent">
                 <div class="tab-pane fade show active" id="pills-data" role="tabpanel">
+                    <div class="px-3 py-2 d-flex justify-content-between align-items-center bg-dark bg-opacity-25 border-bottom border-secondary">
+                        <div class="small text-secondary"><i class="bi bi-info-circle me-1"></i> <?= count($records) ?> Datensätze <?= $isDbMode ? 'in der Datenbank' : 'aus CSV' ?></div>
+                        <?php if ($isDbMode): ?>
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <button class="btn btn-outline-info" onclick="openFieldsModal()"><i class="bi bi-layout-three-columns me-1"></i> Spalten verwalten</button>
+                                <button class="btn btn-success" onclick="openRecordModal()" <?= count($fields) === 0 ? 'disabled title="Bitte zuerst Spalten anlegen"' : '' ?>><i class="bi bi-plus-circle me-1"></i> Datensatz hinzufügen</button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                     <div class="glass-card shadow-lg p-0" style="overflow:hidden;">
-                        <div style="max-height: 72vh; overflow: auto;">
+                        <div id="table-scroll-container">
+                            <div id="table-sentinel"></div>
                             <table class="table table-dark table-hover table-sm mb-0">
                                 <thead class="sticky-top-table">
                                     <tr>
                                         <th width="40" class="ps-3 text-center"><input type="checkbox" class="form-check-input" id="checkAllRecords" onchange="toggleAllRecords(this.checked)" title="Alle an/abwählen"></th>
+                                        <th width="50" class="text-secondary small">Nr.</th>
+                                        <?php if ($isDbMode): ?><th width="70" class="text-secondary small">Aktion</th><?php endif; ?>
                                         <?php foreach($fields as $f): ?><th><?= htmlspecialchars($f['name']) ?></th><?php endforeach; ?>
                                     </tr>
                                     <tr>
                                         <th></th>
+                                        <th></th>
+                                        <?php if ($isDbMode): ?><th></th><?php endif; ?>
                                         <?php foreach($fields as $idx => $f): ?>
-                                            <th><input type="text" class="form-control form-control-sm bg-dark text-light border-secondary column-filter" data-col="<?= $idx + 1 ?>" placeholder="Filter..." oninput="filterTable()"></th>
+                                            <th><input type="text" class="form-control form-control-sm bg-dark text-light border-secondary column-filter" data-field-id="<?= $f['id'] ?>" placeholder="Filter..." oninput="filterTable()"></th>
                                         <?php endforeach; ?>
                                     </tr>
                                 </thead>
                                 <tbody id="data-table-body">
-                                    <?php foreach($records as $rid => $rec): ?>
-                                    <tr>
-                                        <td class="ps-3 text-center"><input type="checkbox" class="form-check-input record-select-checkbox" data-id="<?= $rid ?>" onchange="updateSelection(<?= $rid ?>, this.checked)" <?= $rec['selected']?'checked':'' ?>></td>
-                                        <?php foreach($fields as $f): ?><td><?= htmlspecialchars($rec['values'][$f['id']]??'') ?></td><?php endforeach; ?>
-                                    </tr>
-                                    <?php endforeach; ?>
+                                    <!-- Virtual rows injected here -->
                                 </tbody>
                             </table>
                         </div>
@@ -235,8 +237,23 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
 
                 <div class="tab-pane fade" id="pills-designer" role="tabpanel">
                     <div class="glass-card shadow-lg">
-                        <div class="card-header p-3 d-flex justify-content-between align-items-center border-bottom border-secondary">
-                            <span class="fw-bold small" style="letter-spacing: 1px;"><i class="bi bi-pencil-square me-2 text-primary"></i>VISUAL EDITOR</span>
+                        <div class="card-header p-3 d-flex flex-wrap justify-content-between align-items-center border-bottom border-secondary gap-3">
+                            <div class="d-flex align-items-center">
+                                <span class="fw-bold small me-4" style="letter-spacing: 1px;"><i class="bi bi-pencil-square me-2 text-primary"></i>VISUAL EDITOR</span>
+                                <div class="d-flex align-items-center gap-2 px-3 border-start border-secondary">
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" id="snapToGrid" checked>
+                                        <label class="form-check-label small text-muted" for="snapToGrid" style="font-size: 0.75rem;">Raster</label>
+                                    </div>
+                                    <select id="gridSize" class="form-select form-select-sm bg-dark text-light border-secondary py-0" style="font-size: 0.7rem; width: 75px; height: 24px;">
+                                        <option value="0.1">0.1mm</option>
+                                        <option value="0.5">0.5mm</option>
+                                        <option value="1" selected>1.0mm</option>
+                                        <option value="2">2.0mm</option>
+                                        <option value="5">5.0mm</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div>
                                 <div class="btn-group btn-group-sm me-2 border border-secondary rounded overflow-hidden">
                                     <button class="btn btn-dark" onclick="addObject('text')"><i class="bi bi-plus me-1"></i> Text</button>
@@ -246,10 +263,21 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <button class="btn btn-sm btn-outline-secondary px-3 me-2" onclick="editObject(selectedIndices[0])" title="Eigenschaften des gewählten Objekts bearbeiten" id="btnEditSelected" disabled><i class="bi bi-pencil me-1"></i> Bearbeiten</button>
                                 <div class="btn-group btn-group-sm me-3 border border-secondary rounded overflow-hidden">
                                     <button class="btn btn-dark" onclick="alignObjects('left')" title="Links ausrichten"><i class="bi bi-align-start"></i></button>
+                                    <button class="btn btn-dark" onclick="alignObjects('right')" title="Rechts ausrichten"><i class="bi bi-align-end"></i></button>
+                                    <button class="btn btn-dark" onclick="alignObjects('center_h')" title="Horizontal zentrieren"><i class="bi bi-align-center"></i></button>
+                                    <button class="btn btn-dark" onclick="alignObjects('center_v')" title="Vertikal zentrieren"><i class="bi bi-align-middle"></i></button>
                                     <button class="btn btn-dark" onclick="alignObjects('width')" title="Einheilt. Breite"><i class="bi bi-arrows-expand" style="transform: rotate(90deg); display: inline-block;"></i></button>
                                     <button class="btn btn-dark" onclick="alignObjects('spacing_dist')" title="Vert. Gleichzug"><i class="bi bi-distribute-vertical"></i></button>
                                     <button class="btn btn-dark" onclick="adjustSpacing(1)" title="Abstand +"><i class="bi bi-plus"></i></button>
                                     <button class="btn btn-dark" onclick="adjustSpacing(-1)" title="Abstand -"><i class="bi bi-dash"></i></button>
+                                </div>
+                                <div class="btn-group btn-group-sm me-3 border border-secondary rounded overflow-hidden">
+                                    <span title="Rückgängig (Strg+Z)" data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <button class="btn btn-dark" onclick="undo()" id="btnUndo" disabled><i class="bi bi-arrow-counterclockwise"></i></button>
+                                    </span>
+                                    <span title="Wiederholen (Strg+Y)" data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <button class="btn btn-dark" onclick="redo()" id="btnRedo" disabled><i class="bi bi-arrow-clockwise"></i></button>
+                                    </span>
                                 </div>
                                 <div class="btn-group btn-group-sm me-2 border border-secondary rounded overflow-hidden" title="Zoom">
                                     <button class="btn btn-dark px-2" onclick="manualZoom(-0.1)" title="Verkleinern"><i class="bi bi-zoom-out"></i></button>
@@ -259,7 +287,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 </div>
                                 <button class="btn btn-sm btn-outline-info px-3 me-2 border-info" onclick="openPreview()"><i class="bi bi-eye me-1"></i> Vorschau</button>
                                 <button class="btn btn-sm btn-outline-warning px-3 me-2" onclick="restoreDesign()" title="Letzten gespeicherten Stand aus der Datenbank wiederherstellen"><i class="bi bi-arrow-counterclockwise me-1"></i> Wiederherstellen</button>
-                                <button class="btn btn-sm btn-primary px-3 shadow-sm" onclick="saveDesigner()"><i class="bi bi-cloud-check me-1"></i> Design speichern</button>
+                                <button id="btnSaveDesigner" class="btn btn-sm btn-primary px-3 shadow-sm" onclick="saveDesigner()"><i class="bi bi-cloud-check me-1"></i> Design speichern</button>
                             </div>
                         </div>
                         <div class="card-body p-5 bg-slate-900 border-0 text-center position-relative d-flex justify-content-center align-items-center" style="min-height: 600px; overflow: auto;">
@@ -272,7 +300,7 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                                 <div id="designer-canvas" style="width:<?= $format['width_mm']*3.78?>px; height:<?= $format['height_mm']*3.78?>px;"></div>
                                 </div>
                             </div>
-                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.8.0-STABLE</div>
+                            <div style="position:absolute; bottom:10px; right:15px; font-size:10px; color:rgba(255,255,255,0.2);">UI-v2.9.0-REFACTORED</div>
                         </div>
                     </div>
                 </div>
@@ -300,9 +328,20 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
                 </div>
             </div>
             <div class="row g-2">
-                <div id="fontSizeGroup" class="col-6"><label class="form-label-sm">Schriftgröße (pt)</label><input type="number" class="form-control bg-dark text-light border-secondary" id="objFontSize"></div>
-                <div id="barcodeTypeGroup" class="col-6"><label class="form-label-sm">Barcode Typ</label><select class="form-select bg-dark text-light border-secondary" id="objBarcodeType"><option value="code128">Code 128</option><option value="ean13">EAN 13</option><option value="ean8">EAN 8</option><option value="qr">QR Code</option></select></div>
+                <div id="fontSizeGroup" class="col-4"><label class="form-label-sm">Größe (pt)</label><input type="number" class="form-control bg-dark text-light border-secondary" id="objFontSize"></div>
+                <div id="fontFamilyGroup" class="col-8"><label class="form-label-sm">Schriftart</label>
+                    <select class="form-select bg-dark text-light border-secondary" id="objFontFamily">
+                        <option value="'Outfit', sans-serif">Outfit (Standard)</option>
+                        <option value="'Inter', sans-serif">Inter</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Montserrat', sans-serif">Montserrat</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Courier New', monospace">Courier</option>
+                        <option value="'Times New Roman', serif">Times</option>
+                    </select>
+                </div>
             </div>
+            <div id="barcodeTypeGroup" class="mt-2"><label class="form-label-sm">Barcode Typ</label><select class="form-select bg-dark text-light border-secondary" id="objBarcodeType"><option value="code128">Code 128</option><option value="ean13">EAN 13</option><option value="ean8">EAN 8</option><option value="qr">QR Code</option></select></div>
             <div class="row g-2 mt-2">
                 <div class="col-6"><label class="form-label-sm">Breite der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objWidth"></div>
                 <div class="col-6"><label class="form-label-sm">Höhe der Box (mm)</label><input type="number" step="0.5" class="form-control bg-dark text-light border-secondary" id="objHeight"></div>
@@ -410,793 +449,77 @@ $globalTemplates = $pdo->query("SELECT * FROM global_label_templates ORDER BY na
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bwip-js/dist/bwip-js-min.js"></script>
+<script src="designer.js?v=<?= time() ?>"></script>
 <script>
-// Lineale (Rulers) rendern
-const pxPerMm = 3.78;
-const formatW = <?= (float)$format['width_mm'] ?>;
-const formatH = <?= (float)$format['height_mm'] ?>;
+    // Configuration for the designer
+    const config_projectId = <?= $projectId ?>;
+    const config_fields = <?= json_encode($fields) ?>;
+    const config_isDbMode = <?= $isDbMode ? 'true' : 'false' ?>;
+    const config_records = <?= json_encode(array_values(array_map(function($r, $k) { 
+        return ['id' => $k, 'selected' => $r['selected'], 'values' => $r['values'], 'db_id' => $r['db_id'] ?? null]; 
+    }, $records, array_keys($records)))) ?>;
 
-function updateDesignerZoom() {
-    const pId = <?= $projectId ?>;
-    const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value.replace(',', '.')) || 10;
-    const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value.replace(',', '.')) || 10;
-    const canv = document.getElementById('designer-canvas');
-    const rx = document.getElementById('ruler-x');
-    const ry = document.getElementById('ruler-y');
-
-    // Canvas Größe live anpassen
-    canv.style.width = (fw * pxPerMm) + 'px';
-    canv.style.height = (fh * pxPerMm) + 'px';
-    rx.style.width = (fw * pxPerMm) + 'px';
-    ry.style.height = (fh * pxPerMm) + 'px';
-
-    // Rulers neu zeichnen
-    renderRulers(fw, fh);
-
-    // Zoom-Berechnung
-    const targetAreaW = 850;
-    const targetAreaH = 450;
-    let scaleW = targetAreaW / (fw * pxPerMm);
-    let scaleH = targetAreaH / (fh * pxPerMm);
-    let newZoom = Math.min(scaleW, scaleH);
-    if (newZoom > 5.0) newZoom = 5.0;
-    if (newZoom < 0.2) newZoom = 0.2;
-
-    window.zoomLevel = newZoom; // Global verfügbar machen für Drag&Drop
-    window._autoZoom = newZoom; // Auto-Zoom merken für Reset
-    window._manualZoom = null; // Auto-Zoom zurücksetzen
-    applyZoom(newZoom);
-}
-
-function applyZoom(z) {
-    window.zoomLevel = z;
-    document.getElementById('zoom-container').style.transform = `scale(${z})`;
-    const lbl = document.getElementById('zoomLabel');
-    if (lbl) lbl.textContent = Math.round(z * 100) + '%';
-}
-
-function manualZoom(delta) {
-    const current = window._manualZoom !== null ? window._manualZoom : window.zoomLevel;
-    let next = Math.round((current + delta) * 10) / 10;
-    if (next < 0.1) next = 0.1;
-    if (next > 5.0) next = 5.0;
-    window._manualZoom = next;
-    applyZoom(next);
-}
-
-function resetZoom() {
-    window._manualZoom = null;
-    applyZoom(window._autoZoom || 1);
-}
-
-function renderRulers(fw, fh) {
-    const rx = document.getElementById('ruler-x');
-    const ry = document.getElementById('ruler-y');
-    rx.innerHTML = '';
-    ry.innerHTML = '';
-
-    for(let i=0; i<=fw; i+=10) {
-        rx.innerHTML += `<div style="position:absolute; left:${i*pxPerMm}px; bottom:2px; transform:translateX(2px);">${i}</div>
-                         <div style="position:absolute; left:${i*pxPerMm}px; bottom:0; height:12px; border-left:1px solid #475569;"></div>`;
-    }
-    for(let i=5; i<=fw; i+=10) rx.innerHTML += `<div style="position:absolute; left:${i*pxPerMm}px; bottom:0; height:5px; border-left:1px solid #475569;"></div>`;
-
-    for(let i=0; i<=fh; i+=10) {
-        ry.innerHTML += `<div style="position:absolute; top:${i*pxPerMm}px; right:12px; transform:translateY(-50%);">${i}</div>
-                         <div style="position:absolute; top:${i*pxPerMm}px; right:0; width:10px; border-top:1px solid #475569;"></div>`;
-    }
-    for(let i=5; i<=fh; i+=10) ry.innerHTML += `<div style="position:absolute; top:${i*pxPerMm}px; right:0; width:5px; border-top:1px solid #475569;"></div>`;
-}
-
-// Initialer Aufruf zur Korrektur von Browser-Cache-Fehlern
-window.addEventListener('DOMContentLoaded', () => {
-    // Sicherstellen, dass die PHP-Werte wirklich in den Feldern stehen (gegen Browser-Persistence)
-    const pId = <?= $projectId ?>;
-    const f = document.getElementById('formatForm');
-    f.querySelector(`[name="width_mm_${pId}"]`).value = "<?= (float)$format['width_mm'] ?>";
-    f.querySelector(`[name="height_mm_${pId}"]`).value = "<?= (float)$format['height_mm'] ?>";
-    f.querySelector(`[name="cols_${pId}"]`).value = "<?= (int)$format['cols'] ?>";
-    f.querySelector(`[name="rows_${pId}"]`).value = "<?= (int)$format['rows'] ?>";
-    f.querySelector(`[name="col_gap_mm_${pId}"]`).value = "<?= (float)$format['col_gap_mm'] ?>";
-    f.querySelector(`[name="row_gap_mm_${pId}"]`).value = "<?= (float)$format['row_gap_mm'] ?>";
-
-    updateDesignerZoom();
-});
-
-let labelObjects = <?= json_encode($labelObjects) ?>;
-labelObjects = labelObjects.map(o => { if(typeof o.properties==='string') try { o.properties=JSON.parse(o.properties); } catch(e){ o.properties={}; } return o; });
-const PX_PER_MM = 3.78;
-let selectedIndices = [];
-
-document.addEventListener('DOMContentLoaded', () => {
-    const hash = window.location.hash;
-    if (hash) {
-        const tCol = document.querySelector(`button[data-bs-target="${hash}"]`);
-        if(tCol) bootstrap.Tab.getOrCreateInstance(tCol).show();
-    }
-    document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', (e) => {
-            const t = e.target.getAttribute('data-bs-target');
-            history.replaceState(null, null, t);
-            if(t==='#pills-designer') renderObjects();
+    document.addEventListener('DOMContentLoaded', () => {
+        initDesigner({
+            projectId: config_projectId,
+            labelObjects: <?= json_encode($labelObjects) ?>,
+            fields: config_fields,
+            records: config_records,
+            isDbMode: config_isDbMode
         });
     });
-    renderObjects();
-});
-
-function insertPlaceholder(n) { const t = document.getElementById('objContent'); const s = t.selectionStart; t.value = t.value.substring(0, s) + `[~${n}~]` + t.value.substring(t.selectionEnd); t.focus(); }
-
-function updateSelection(recordId, isSelected) {
-    const fd = new FormData();
-    fd.append('record_id', recordId);
-    fd.append('project_id', <?= $projectId ?>);
-    fd.append('selected', isSelected ? 1 : 0);
-    fetch('api_update_selection.php', { method: 'POST', body: fd });
-}
-
-let filterTimeout;
-function filterTable() {
-    clearTimeout(filterTimeout);
-    filterTimeout = setTimeout(() => {
-        const filters = Array.from(document.querySelectorAll('.column-filter'))
-            .filter(i => i.value.trim() !== '')
-            .map(input => ({
-                col: parseInt(input.getAttribute('data-col')),
-                val: input.value.toLowerCase()
-            }));
-
-        const rows = document.getElementById('data-table-body').rows;
-        const rowCount = rows.length;
-
-        if (filters.length === 0) {
-            for (let i = 0; i < rowCount; i++) rows[i].style.display = '';
-            return;
-        }
-
-        for (let i = 0; i < rowCount; i++) {
-            const cells = rows[i].cells;
-            let showRow = true;
-            for (let f = 0; f < filters.length; f++) {
-                const filter = filters[f];
-                // textContent ist deutlich schneller als innerText, da es kein Layout-Reflow erzwingt
-                if (!cells[filter.col].textContent.toLowerCase().includes(filter.val)) {
-                    showRow = false;
-                    break;
-                }
-            }
-            rows[i].style.display = showRow ? '' : 'none';
-        }
-    }, 300); // 300ms Verzögerung abwarten
-}
-
-function updateEditButton() {
-    const btn = document.getElementById('btnEditSelected');
-    if (!btn) return;
-    const hasOne = selectedIndices.length === 1;
-    btn.disabled = !hasOne;
-    btn.classList.toggle('btn-outline-primary', hasOne);
-    btn.classList.toggle('btn-outline-secondary', !hasOne);
-}
-
-function renderObjects() {
-    const canv = document.getElementById('designer-canvas');
-    if(!canv) return;
-    canv.innerHTML = '';
-    updateEditButton();
-
-    const pId = <?= $projectId ?>;
-    const fw = parseFloat(document.querySelector(`[name="width_mm_${pId}"]`).value) || 10;
-    const fh = parseFloat(document.querySelector(`[name="height_mm_${pId}"]`).value) || 10;
-
-    // Canvas-Klick: Alle deselektieren
-    canv.addEventListener('click', (e) => {
-        if (e.target === canv) {
-            selectedIndices = [];
-            document.querySelectorAll('.designer-object').forEach(el => el.classList.remove('selected'));
-            updateEditButton();
-        }
-    }, true);
-
-    // Kalibrierungsrahmen (1mm innerhalb der Begrenzung)
-    if (document.getElementById('showCalibrationBorder').checked) {
-        const border = document.createElement('div');
-        border.style.position = 'absolute';
-        border.style.boxSizing = 'border-box';
-        border.style.pointerEvents = 'none';
-        border.style.zIndex = '500';
-
-        // Der Rahmen soll 1mm kleiner sein als das Etikett (0.5mm Rand rundherum)
-        // Linienstärke 1mm
-        const bW = (fw - 1) * PX_PER_MM;
-        const bH = (fh - 1) * PX_PER_MM;
-        const bL = 0.5 * PX_PER_MM;
-        const bT = 0.5 * PX_PER_MM;
-        const bThick = 1 * PX_PER_MM;
-
-        border.style.left = bL + 'px';
-        border.style.top = bT + 'px';
-        border.style.width = bW + 'px';
-        border.style.height = bH + 'px';
-        border.style.border = `${bThick}px solid rgba(239, 68, 68, 0.6)`; // Rötlich und halbtransparent
-
-        canv.appendChild(border);
-    }
-
-    labelObjects.forEach((obj, idx) => {
-        const div = document.createElement('div');
-        div.className = 'designer-object ' + (selectedIndices.includes(idx) ? 'selected' : '');
-        const rot = obj.rotation || 0;
-        div.style.cssText = `left:${obj.x_mm*PX_PER_MM}px; top:${obj.y_mm*PX_PER_MM}px; width:${obj.width_mm*PX_PER_MM}px; height:${obj.height_mm*PX_PER_MM}px; transform: rotate(${rot}deg);`;
-        const ctrl = document.createElement('div');
-        ctrl.className = 'obj-controls no-print';
-        const elHeightPx = obj.height_mm * PX_PER_MM;
-        const ctrlScale = Math.min(1, Math.max(0.45, elHeightPx / 56));
-        ctrl.style.transform = `scale(${ctrlScale.toFixed(2)})`;
-        ctrl.innerHTML = `<div class="obj-btn" style="background:#6366f1" title="Ebene nach vorne" onclick="event.stopPropagation(); bringForward(${idx})">▲</div>
-                          <div class="obj-btn" style="background:#6366f1" title="Ebene nach hinten" onclick="event.stopPropagation(); sendBackward(${idx})">▼</div>
-                          <div class="obj-btn" style="background:#3b82f6" onclick="event.stopPropagation(); editObject(${idx})">✏️</div>
-                          <div class="obj-btn" style="background:#ef4444" onclick="event.stopPropagation(); deleteObject(${idx})">🗑️</div>`;
-        div.appendChild(ctrl);
-        const inner = document.createElement('div');
-        inner.style.pointerEvents = 'none'; inner.style.width='100%'; inner.style.height='100%'; inner.style.display='flex'; inner.style.alignItems='center'; inner.style.justifyContent='center';
-
-        if(obj.type==='text') {
-            inner.innerText = obj.properties.content||'Text';
-            inner.style.fontSize = (obj.properties.font_size||10)+'pt';
-            if(obj.properties.bold) inner.style.fontWeight = 'bold';
-            if(obj.properties.italic) inner.style.fontStyle = 'italic';
-            if(obj.properties.vertical) {
-                inner.style.writingMode = 'vertical-rl';
-                inner.style.textOrientation = 'upright';
-                inner.style.letterSpacing = '-2px';
-            }
-            const ta = obj.properties.text_align || 'center';
-            if (ta === 'left') inner.style.justifyContent = 'flex-start';
-            if (ta === 'right') inner.style.justifyContent = 'flex-end';
-        }
-        else if(obj.type==='image') {
-            if(obj.properties.image_data) {
-                const img = document.createElement('img');
-                img.src = obj.properties.image_data;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'contain';
-                img.style.display = 'block';
-                inner.appendChild(img);
-            } else {
-                inner.innerHTML = '<span style="font-size:9px; color:#94a3b8;"><i class="bi bi-image"></i> Kein Bild</span>';
-            }
-        }
-        else {
-            const c = document.createElement('canvas');
-            const bType = obj.properties.barcode_type||'code128';
-            const content = obj.properties.content||'123';
-
-            // EAN Validierung (nur falls kein Platzhalter enthalten ist)
-            let hasError = false;
-            let errorMsg = "";
-            if (bType === 'ean8' && !/^\d{8}$/.test(content) && content.indexOf('[~') === -1) {
-                hasError = true; errorMsg = "EAN8 ERROR\n(8 Ziffern!)";
-            } else if (bType === 'ean13' && !/^\d{12,13}$/.test(content) && content.indexOf('[~') === -1) {
-                hasError = true; errorMsg = "EAN13 ERROR\n(12-13 Ziffern!)";
-            }
-
-            if (hasError) {
-                const warn = document.createElement('div');
-                warn.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(239, 68, 68, 0.6); display:flex; align-items:center; justify-content:center; text-align:center; color:white; font-size:8px; z-index:10; pointer-events:none;";
-                warn.innerText = errorMsg;
-                inner.appendChild(warn);
-            }
-
-            try {
-                let bTypeInternal = bType;
-                let isQR = bTypeInternal === 'qr';
-                if(isQR) bTypeInternal = 'qrcode';
-
-                const opts = {
-                    bcid: bTypeInternal,
-                    text: content,
-                    scale: 2,
-                    includetext: isQR ? false : (obj.properties.show_htr !== false)
-                };
-                if(!isQR) opts.height = 10;
-
-                bwipjs.toCanvas(c, opts);
-                c.style.width = '100%';
-                c.style.height = '100%';
-                c.style.objectFit = 'contain';
-            } catch(e){}
-            inner.appendChild(c);
-        }
-        div.appendChild(inner);
-
-        // Resizer immer hinzufügen (Sichtbarkeit via CSS .selected)
-        ['tl','tr','bl','br'].forEach(pos => {
-            const resizer = document.createElement('div');
-            resizer.className = 'resizer ' + pos;
-            resizer.onmousedown = (e) => {
-                e.stopPropagation();
-                const sX=e.clientX, sY=e.clientY;
-                const iW=obj.width_mm, iH=obj.height_mm, iX=obj.x_mm, iY=obj.y_mm;
-                const isQR = obj.properties.barcode_type === 'qr';
-
-                const move = (ev) => {
-                    const dx = (ev.clientX - sX) / (PX_PER_MM * zoomLevel);
-                    const dy = (ev.clientY - sY) / (PX_PER_MM * zoomLevel);
-
-                    let nw = iW, nh = iH, nx = iX, ny = iY;
-
-                    if(pos.includes('r')) nw = iW + dx;
-                    if(pos.includes('l')) { nw = iW - dx; nx = iX + dx; }
-                    if(pos.includes('b')) nh = iH + dy;
-                    if(pos.includes('t')) { nh = iH - dy; ny = iY + dy; }
-
-                    if(nw < 3) { if(pos.includes('l')) nx = iX + (iW - 3); nw = 3; }
-                    if(nh < 3) { if(pos.includes('t')) ny = iY + (iH - 3); nh = 3; }
-
-                    if(isQR) {
-                        const newSize = Math.max(nw, nh);
-                        if(pos === 'br') { nw = newSize; nh = newSize; }
-                        else if(pos === 'tl') { nx = iX + (iW - newSize); ny = iY + (iH - newSize); nw = newSize; nh = newSize; }
-                        else if(pos === 'tr') { ny = iY + (iH - newSize); nw = newSize; nh = newSize; }
-                        else if(pos === 'bl') { nx = iX + (iW - newSize); nw = newSize; nh = newSize; }
-                    }
-
-                    if(obj.type === 'image' && obj.properties.lock_ratio !== false) {
-                        const r = obj.properties.ratio || 1;
-                        nh = nw / r;
-                        if(pos.includes('t')) ny = iY + iH - nh;
-                        if(nh < 3) { nh = 3; nw = nh * r; if(pos.includes('l')) nx = iX + iW - nw; }
-                    }
-
-                    obj.width_mm = nw; obj.height_mm = nh;
-                    obj.x_mm = nx; obj.y_mm = ny;
-
-                    div.style.width = (nw * PX_PER_MM) + 'px';
-                    div.style.height = (nh * PX_PER_MM) + 'px';
-                    div.style.left = (nx * PX_PER_MM) + 'px';
-                    div.style.top = (ny * PX_PER_MM) + 'px';
-                };
-                const up = () => {
-                    document.removeEventListener('mousemove', move);
-                    document.removeEventListener('mouseup', up);
-                    renderObjects();
-                };
-                document.addEventListener('mousemove', move);
-                document.addEventListener('mouseup', up);
-            };
-            div.appendChild(resizer);
-        });
-
-        div.onmousedown = (e) => {
-            if(e.target.classList.contains('obj-btn')) return;
-
-            if (e.ctrlKey) {
-                if (selectedIndices.includes(idx)) {
-                    selectedIndices = selectedIndices.filter(i => i !== idx);
-                } else {
-                    selectedIndices.push(idx);
-                }
-            } else {
-                selectedIndices = [idx];
-            }
-
-            document.querySelectorAll('.designer-object').forEach((el, i) => {
-                if (selectedIndices.includes(i)) el.classList.add('selected');
-                else el.classList.remove('selected');
-            });
-            updateEditButton();
-
-            const sX=e.clientX, sY=e.clientY;
-            const initialPos = selectedIndices.map(i => ({idx: i, x: labelObjects[i].x_mm * PX_PER_MM, y: labelObjects[i].y_mm * PX_PER_MM}));
-
-            const move = (ev) => {
-                const dx = (ev.clientX - sX) / zoomLevel;
-                const dy = (ev.clientY - sY) / zoomLevel;
-
-                initialPos.forEach(p => {
-                    const obj = labelObjects[p.idx];
-                    obj.x_mm = (p.x + dx) / PX_PER_MM;
-                    obj.y_mm = (p.y + dy) / PX_PER_MM;
-
-                    // Live-Update der DIVs (optional, aber performanter für Feedback)
-                    const el = document.querySelectorAll('.designer-object')[p.idx];
-                    if (el) {
-                        el.style.left = obj.x_mm * PX_PER_MM + 'px';
-                        el.style.top = obj.y_mm * PX_PER_MM + 'px';
-                    }
-                });
-            };
-            const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
-            document.addEventListener('mousemove', move);
-            document.addEventListener('mouseup', up);
-        };
-        div.ondblclick = () => editObject(idx);
-        canv.appendChild(div);
-    });
-}
-function addObject(t) {
-    if (t === 'image') {
-        document.getElementById('newImageFile').value = '';
-        document.getElementById('newImageError').style.display = 'none';
-        document.getElementById('newImagePreviewBox').style.display = 'none';
-        document.getElementById('newImagePreview').src = '';
-        document.getElementById('btnConfirmAddImage').disabled = true;
-        new bootstrap.Modal(document.getElementById('imageUploadModal')).show();
-        return;
-    }
-    const STEP = 5, W = 40, H = 15;
-    const n = labelObjects.length;
-    const maxX = Math.max(0, formatW - W);
-    const maxY = Math.max(0, formatH - H);
-    const offsetX = Math.min(n * STEP, maxX);
-    const offsetY = Math.min(n * STEP, maxY);
-    labelObjects.push({type:t, x_mm: offsetX, y_mm: offsetY, width_mm:W, height_mm:H, rotation: 0, properties:{content:t==='text'?'Text':'123', font_size:10, barcode_type:'code128', text_align: 'center'}});
-    selectedIndices = [labelObjects.length - 1];
-    renderObjects();
-}
-function confirmAddImage() {
-    const imgEl = document.getElementById('newImagePreview');
-    const imgData = imgEl.src;
-    if (!imgData || imgData === window.location.href) return;
-    const STEP = 5, W = 20;
-    const n = labelObjects.length;
-    const ratio = (imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0)
-        ? imgEl.naturalWidth / imgEl.naturalHeight : 1;
-    const H = parseFloat((W / ratio).toFixed(2));
-    const maxX = Math.max(0, formatW - W);
-    const maxY = Math.max(0, formatH - H);
-    const offsetX = Math.min(n * STEP, maxX);
-    const offsetY = Math.min(n * STEP, maxY);
-    labelObjects.push({type:'image', x_mm: offsetX, y_mm: offsetY, width_mm: W, height_mm: H, rotation: 0, properties:{image_data: imgData, lock_ratio: true, ratio: ratio}});
-    selectedIndices = [labelObjects.length - 1];
-    bootstrap.Modal.getInstance(document.getElementById('imageUploadModal')).hide();
-    renderObjects();
-}
-function deleteObject(idx) { labelObjects.splice(idx, 1); selectedIndices = selectedIndices.filter(i => i !== idx).map(i => i > idx ? i - 1 : i); renderObjects(); }
-function bringForward(idx) {
-    if (idx >= labelObjects.length - 1) return;
-    [labelObjects[idx], labelObjects[idx+1]] = [labelObjects[idx+1], labelObjects[idx]];
-    selectedIndices = selectedIndices.map(i => i === idx ? idx+1 : i === idx+1 ? idx : i);
-    renderObjects();
-}
-function sendBackward(idx) {
-    if (idx <= 0) return;
-    [labelObjects[idx], labelObjects[idx-1]] = [labelObjects[idx-1], labelObjects[idx]];
-    selectedIndices = selectedIndices.map(i => i === idx ? idx-1 : i === idx-1 ? idx : i);
-    renderObjects();
-}
-let pendingImageReplacement = null;
-let pendingImageRatio = null;
-function editObject(idx) {
-    if (!selectedIndices.includes(idx)) selectedIndices = [idx];
-    const o = labelObjects[idx];
-    document.getElementById('objContent').value = o.properties.content || '';
-    document.getElementById('objContentGroup').style.display = o.type==='image'?'none':'block';
-    document.getElementById('fontSizeGroup').style.display = o.type==='text'?'block':'none';
-    document.getElementById('barcodeTypeGroup').style.display = o.type==='barcode'?'block':'none';
-    document.getElementById('textOptionsGroup').style.display = o.type==='text'?'block':'none';
-    document.getElementById('barcodeOptionsGroup').style.display = o.type==='barcode'?'block':'none';
-    document.getElementById('imageOptionsGroup').style.display = o.type==='image'?'block':'none';
-    if (o.type === 'image') {
-        pendingImageReplacement = null;
-        pendingImageRatio = null;
-        if (!o.properties.ratio && o.width_mm > 0 && o.height_mm > 0) {
-            o.properties.ratio = o.width_mm / o.height_mm;
-        }
-        document.getElementById('objImagePreview').src = o.properties.image_data || '';
-        document.getElementById('objImageFile').value = '';
-        document.getElementById('objImageError').style.display = 'none';
-        document.getElementById('objImageLockRatio').checked = o.properties.lock_ratio !== false;
-    }
-
-    document.getElementById('objWidth').value = o.width_mm;
-    document.getElementById('objHeight').value = o.height_mm;
-    document.getElementById('objRotation').value = o.rotation || 0;
-
-    if(o.type==='text') {
-        document.getElementById('objFontSize').value = o.properties.font_size||10;
-        document.getElementById('objBold').checked = !!o.properties.bold;
-        document.getElementById('objItalic').checked = !!o.properties.italic;
-        document.getElementById('objVertical').checked = !!o.properties.vertical;
-        const ta = o.properties.text_align || 'center';
-        const rb = document.querySelector(`input[name="objTextAlign"][value="${ta}"]`);
-        if (rb) rb.checked = true;
-    } else {
-        document.getElementById('objBarcodeType').value = o.properties.barcode_type||'code128';
-        document.getElementById('objShowHTR').checked = o.properties.show_htr !== false;
-    }
-    new bootstrap.Modal(document.getElementById('objectModal')).show();
-}
-function applyObjectProperties() {
-    // Falls mehrere gewählt sind, aber nur eines editiert wurde (Standardverhalten), nehmen wir das erste aus der Auswahl
-    const idx = selectedIndices[0];
-    if (idx === undefined) return;
-    const o = labelObjects[idx];
-    o.properties.content = document.getElementById('objContent').value;
-    o.width_mm = parseFloat(document.getElementById('objWidth').value.replace(',', '.')) || o.width_mm;
-    o.height_mm = parseFloat(document.getElementById('objHeight').value.replace(',', '.')) || o.height_mm;
-    o.rotation = parseFloat(document.getElementById('objRotation').value) || 0;
-
-    if(o.type==='text') {
-        o.properties.font_size = document.getElementById('objFontSize').value;
-        o.properties.bold = document.getElementById('objBold').checked;
-        o.properties.italic = document.getElementById('objItalic').checked;
-        o.properties.vertical = document.getElementById('objVertical').checked;
-        o.properties.text_align = document.querySelector('input[name="objTextAlign"]:checked').value;
-    } else if(o.type==='barcode') {
-        o.properties.barcode_type = document.getElementById('objBarcodeType').value;
-        o.properties.show_htr = document.getElementById('objShowHTR').checked;
-    } else if(o.type==='image') {
-        if (pendingImageReplacement) {
-            o.properties.image_data = pendingImageReplacement;
-            pendingImageReplacement = null;
-            if (pendingImageRatio) { o.properties.ratio = pendingImageRatio; pendingImageRatio = null; }
-        }
-        o.properties.lock_ratio = document.getElementById('objImageLockRatio').checked;
-    }
-    bootstrap.Modal.getInstance(document.getElementById('objectModal')).hide();
-    renderObjects();
-}
-function saveDesigner(silent = false) {
-    const fd = new FormData(); fd.append('project_id', <?= $projectId ?>); fd.append('objects', JSON.stringify(labelObjects));
-    return fetch('api_save_objects.php', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.success && !silent) alert('Design erfolgreich gespeichert!'); });
-}
-function restoreDesign() {
-    if (!confirm('Möchten Sie den letzten gespeicherten Stand aus der Datenbank wirklich wiederherstellen? Alle ungespeicherten Änderungen gehen verloren.')) return;
-    fetch('api_get_objects.php?project_id=<?= $projectId ?>')
-        .then(r => r.json())
-        .then(d => {
-            if (!d.success) { alert('Fehler beim Wiederherstellen: ' + (d.message || 'Unbekannter Fehler')); return; }
-            labelObjects = d.objects.map(o => { if (typeof o.properties === 'string') try { o.properties = JSON.parse(o.properties); } catch(e) { o.properties = {}; } return o; });
-            selectedIndices = [];
-            renderObjects();
-        })
-        .catch(() => alert('Verbindungsfehler beim Wiederherstellen.'));
-}
-function saveDesignerAndPrint() {
-    const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
-    persistFormat()
-        .then(() => saveDesigner(true))
-        .then(() => { window.location.href = 'print_labels.php?id=<?= $projectId ?>&cal=' + cal; });
-}
-
-function toggleAllRecords(checked) {
-    const checkboxes = document.querySelectorAll('.record-select-checkbox');
-    checkboxes.forEach(cb => cb.checked = checked);
-
-    const fd = new FormData();
-    fd.append('action_all', '1');
-    fd.append('project_id', <?= $projectId ?>);
-    fd.append('selected', checked ? 1 : 0);
-    fetch('api_update_selection.php', { method: 'POST', body: fd });
-}
-
-function persistFormat() {
-    clearTimeout(_formatSaveTimer);
-    return fetch('api_update_format.php', {method:'POST', body:new FormData(document.getElementById('formatForm'))})
-        .then(r => r.json())
-        .then(d => {
-            if (!d || d.success !== true) {
-                throw new Error((d && d.message) ? d.message : 'Format konnte nicht gespeichert werden.');
-            }
-            return d;
-        });
-}
-function saveFormat() {
-    persistFormat()
-        .then(() => location.reload())
-        .catch(e => alert('Fehler beim Speichern des Formats: ' + (e.message || e)));
-}
-function openPreview() {
-    const cal = document.getElementById('showCalibrationBorder').checked ? 1 : 0;
-    persistFormat()
-        .then(() => saveDesigner(true))
-        .then(() => window.open(`generate_pdf.php?id=<?= $projectId ?>&start=1&cal=` + cal, '_blank'))
-        .catch(e => alert('Fehler vor der Vorschau: ' + (e.message || e)));
-}
-function applyTemplate(s) {
-    if (!s.value) return;
-    const tplId = parseInt(s.value);
-    const pId = <?= $projectId ?>;
-    const f = document.getElementById('formatForm');
-
-    const fd = new FormData();
-    fd.append('action', 'load');
-    fd.append('id', tplId);
-    fetch('api_get_template.php', {method: 'POST', body: fd})
-        .then(r => r.json())
-        .then(t => {
-            if (!t || !t.id) return;
-            f.querySelector(`[name="template_id_${pId}"]`).value = t.id;
-            f.querySelector(`[name="width_mm_${pId}"]`).value = t.width_mm;
-            f.querySelector(`[name="height_mm_${pId}"]`).value = t.height_mm;
-            f.querySelector(`[name="cols_${pId}"]`).value = t.cols;
-            f.querySelector(`[name="rows_${pId}"]`).value = t.rows;
-            f.querySelector(`[name="col_gap_mm_${pId}"]`).value = t.col_gap_mm || 0;
-            f.querySelector(`[name="row_gap_mm_${pId}"]`).value = t.row_gap_mm || 0;
-            f.querySelector(`[name="margin_top_mm_${pId}"]`).value = t.margin_top_mm || 0;
-            f.querySelector(`[name="margin_bottom_mm_${pId}"]`).value = t.margin_bottom_mm || 0;
-            f.querySelector(`[name="margin_left_mm_${pId}"]`).value = t.margin_left_mm || 0;
-            f.querySelector(`[name="margin_right_mm_${pId}"]`).value = t.margin_right_mm || 0;
-            const mtSel = f.querySelector(`[name="media_type_${pId}"]`);
-            if (mtSel) mtSel.value = t.media_type || 'sheet';
-            const mtReadonly = document.getElementById('mediaTypeReadonly');
-            if (mtReadonly) mtReadonly.value = ((t.media_type || 'sheet') === 'roll') ? 'Rolle (aus Vorlage)' : 'Bogen (aus Vorlage)';
-            updateDesignerZoom();
-            persistFormat().catch(e => alert('Fehler beim Übernehmen der Vorlage: ' + (e.message || e)));
-        });
-}
-
-// Live-Update + Auto-Save bei Änderungen
-let _formatSaveTimer = null;
-function scheduleFormatSave() {
-    clearTimeout(_formatSaveTimer);
-    _formatSaveTimer = setTimeout(() => {
-        persistFormat().catch(() => {});
-    }, 600);
-}
-document.querySelectorAll('#formatForm input').forEach(inp => {
-    inp.addEventListener('input', () => { updateDesignerZoom(); scheduleFormatSave(); });
-});
-document.querySelectorAll('#formatForm select').forEach(sel => {
-    sel.addEventListener('change', () => { updateDesignerZoom(); scheduleFormatSave(); });
-});
-
-function setObjRotation(deg) { document.getElementById('objRotation').value = deg; }
-
-// Synchronisiert Höhe/Breite im Modal (QR und Bild mit Ratio-Lock)
-let dimSyncInProgress = false;
-function syncObjectModalDimensions(changedField) {
-    if (dimSyncInProgress) return;
-
-    const idx = selectedIndices[0];
-    if (idx === undefined || !labelObjects[idx]) return;
-
-    const obj = labelObjects[idx];
-    const widthEl = document.getElementById('objWidth');
-    const heightEl = document.getElementById('objHeight');
-    const widthVal = parseFloat((widthEl.value || '').replace(',', '.'));
-    const heightVal = parseFloat((heightEl.value || '').replace(',', '.'));
-
-    if (!Number.isFinite(widthVal) || !Number.isFinite(heightVal) || widthVal <= 0 || heightVal <= 0) return;
-
-    dimSyncInProgress = true;
-    try {
-        if (obj.type === 'barcode' && document.getElementById('objBarcodeType').value === 'qr') {
-            if (changedField === 'width') heightEl.value = widthEl.value;
-            else widthEl.value = heightEl.value;
-        }
-
-        if (obj.type === 'image' && document.getElementById('objImageLockRatio').checked) {
-            const ratio = obj.properties.ratio || (obj.width_mm > 0 && obj.height_mm > 0 ? obj.width_mm / obj.height_mm : 1);
-            if (ratio > 0) {
-                if (changedField === 'width') {
-                    const newHeight = widthVal / ratio;
-                    heightEl.value = Number.isFinite(newHeight) ? newHeight.toFixed(2) : heightEl.value;
-                } else {
-                    const newWidth = heightVal * ratio;
-                    widthEl.value = Number.isFinite(newWidth) ? newWidth.toFixed(2) : widthEl.value;
-                }
-            }
-        }
-    } finally {
-        dimSyncInProgress = false;
-    }
-}
-
-document.getElementById('objBarcodeType').addEventListener('change', function() {
-    if (this.value === 'qr') syncObjectModalDimensions('width');
-});
-document.getElementById('objImageLockRatio').addEventListener('change', function() {
-    if (this.checked) syncObjectModalDimensions('width');
-});
-document.getElementById('objWidth').addEventListener('input', function() {
-    syncObjectModalDimensions('width');
-});
-document.getElementById('objHeight').addEventListener('input', function() {
-    syncObjectModalDimensions('height');
-});
-
-function alignObjects(type) {
-    if (selectedIndices.length < 2) return;
-    const targets = selectedIndices.map(idx => labelObjects[idx]);
-
-    if (type === 'left') {
-        const minX = Math.min(...targets.map(o => o.x_mm));
-        targets.forEach(o => o.x_mm = minX);
-    } else if (type === 'width') {
-        const maxWidth = Math.max(...targets.map(o => o.width_mm));
-        targets.forEach(o => o.width_mm = maxWidth);
-    } else if (type === 'spacing_dist') {
-        targets.sort((a, b) => a.y_mm - b.y_mm);
-        const first = targets[0];
-        const last = targets[targets.length - 1];
-        const totalHeightOfMiddle = targets.slice(0, -1).reduce((s, o) => s + o.height_mm, 0);
-        const gap = (last.y_mm - first.y_mm - totalHeightOfMiddle) / (targets.length - 1);
-
-        let currentY = first.y_mm;
-        for (let i = 1; i < targets.length - 1; i++) {
-            currentY += targets[i-1].height_mm + gap;
-            targets[i].y_mm = currentY;
-        }
-    }
-    renderObjects();
-}
-
-function adjustSpacing(dir) {
-    if (selectedIndices.length < 2) return;
-    const targets = selectedIndices.map(idx => labelObjects[idx]);
-    targets.sort((a, b) => a.y_mm - b.y_mm);
-
-    const step = 2 * dir; // 2mm
-    for (let i = 1; i < targets.length; i++) {
-        targets[i].y_mm += i * step;
-    }
-    renderObjects();
-}
-
-// Datei-Validierung für neues Bild (Upload-Modal)
-document.getElementById('newImageFile').addEventListener('change', function() {
-    const file = this.files[0];
-    const errorEl = document.getElementById('newImageError');
-    const previewBox = document.getElementById('newImagePreviewBox');
-    const preview = document.getElementById('newImagePreview');
-    const btn = document.getElementById('btnConfirmAddImage');
-    errorEl.style.display = 'none';
-    previewBox.style.display = 'none';
-    btn.disabled = true;
-    if (!file) return;
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-        errorEl.textContent = 'Fehler: Nur JPG und PNG sind erlaubt.';
-        errorEl.style.display = 'block';
-        this.value = '';
-        return;
-    }
-    if (file.size > 204800) {
-        errorEl.textContent = 'Datei zu groß (' + Math.round(file.size / 1024) + ' KB). Maximum: 200 KB.';
-        errorEl.style.display = 'block';
-        this.value = '';
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        preview.src = e.target.result;
-        previewBox.style.display = 'block';
-        btn.disabled = false;
-    };
-    reader.readAsDataURL(file);
-});
-
-// Datei-Validierung für Bild-Ersatz (Edit-Modal)
-document.getElementById('objImageFile').addEventListener('change', function() {
-    const file = this.files[0];
-    const errorEl = document.getElementById('objImageError');
-    pendingImageReplacement = null;
-    errorEl.style.display = 'none';
-    if (!file) return;
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-        errorEl.textContent = 'Fehler: Nur JPG und PNG sind erlaubt.';
-        errorEl.style.display = 'block';
-        this.value = '';
-        return;
-    }
-    if (file.size > 204800) {
-        errorEl.textContent = 'Datei zu groß (' + Math.round(file.size / 1024) + ' KB). Maximum: 200 KB.';
-        errorEl.style.display = 'block';
-        this.value = '';
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        pendingImageReplacement = e.target.result;
-        document.getElementById('objImagePreview').src = e.target.result;
-        const tmp = new Image();
-        tmp.onload = () => { if (tmp.naturalWidth > 0) pendingImageRatio = tmp.naturalWidth / tmp.naturalHeight; };
-        tmp.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-});
 </script>
+
+<!-- Modal: Datensatz bearbeiten/erstellen -->
+<div class="modal fade" id="recordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-secondary text-light">
+            <div class="modal-header border-secondary">
+                <h6 class="modal-title fw-bold" id="recordModalTitle"><i class="bi bi-plus-circle me-2 text-primary"></i>DATENSATZ</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="recordForm">
+                    <input type="hidden" id="editRecordDbId">
+                    <input type="hidden" id="editRecordIdx">
+                    <?php foreach($fields as $f): ?>
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-1"><?= htmlspecialchars($f['name']) ?></label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary record-input" data-field-id="<?= $f['id'] ?>" placeholder="<?= htmlspecialchars($f['name']) ?> eingeben...">
+                        </div>
+                    <?php endforeach; ?>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill" onclick="saveRecord()">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal: Spalten verwalten (Header-Definition) -->
+<div class="modal fade" id="fieldsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border-secondary text-light">
+            <div class="modal-header border-secondary">
+                <h6 class="modal-title fw-bold"><i class="bi bi-layout-three-columns me-2 text-info"></i>SPALTEN VERWALTEN (HEADER)</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-muted mb-4">Definieren Sie hier die Namen der Spalten. Diese werden als Header in der Tabelle und als Platzhalter (z.B. [~Name~]) im Designer verwendet.</p>
+                <div id="fieldsList" class="mb-3">
+                    <!-- Spalten-Einträge werden per JS injiziert -->
+                </div>
+                <button type="button" class="btn btn-outline-info btn-sm w-100 mb-3" onclick="addFieldRow()">
+                    <i class="bi bi-plus-circle me-1"></i> Weitere Spalte hinzufügen
+                </button>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary btn-sm px-4 rounded-pill" onclick="saveFields()">Spalten speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
